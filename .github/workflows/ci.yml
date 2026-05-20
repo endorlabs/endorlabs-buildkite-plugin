@@ -33,11 +33,14 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Lint plugin schema and examples
+        env:
+          # buildkite/plugin-linter v3.0.0 (matches .buildkite plugin-linter image-version)
+          PLUGIN_LINTER_IMAGE: buildkite/plugin-linter@sha256:6ad2532e7763eb9a2f9d8f1700b3424e0ec4310721d90e10026f7e3bdfd06cd2
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/plugin" \
             -w /plugin \
-            buildkite/plugin-linter:latest \
+            "${PLUGIN_LINTER_IMAGE}" \
             --id endorlabs \
             --readme docs/examples.md
 

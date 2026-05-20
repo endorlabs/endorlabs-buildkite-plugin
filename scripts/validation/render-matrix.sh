@@ -12,7 +12,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TEMPLATE="${ROOT}/.buildkite/validation/matrix.yml"
-OUT_DEFAULT="${ROOT}/.buildkite/validation/matrix.resolved.yml"
+OUT_DEFAULT="${ROOT}/.local/matrix.resolved.yml"
 
 MODE="check-only"
 OUT_PATH=""
@@ -35,9 +35,9 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-if [[ -f "${ROOT}/scripts/validation/paths.env" ]]; then
+if [[ -f "${ROOT}/.local/paths.env" ]]; then
   # shellcheck source=/dev/null
-  source "${ROOT}/scripts/validation/paths.env"
+  source "${ROOT}/.local/paths.env"
 fi
 
 required_vars=(
@@ -59,7 +59,7 @@ done
 
 if [[ "${#missing[@]}" -gt 0 ]]; then
   echo "validation: missing required configuration: ${missing[*]}" >&2
-  echo "validation: copy scripts/validation/paths.env.example to scripts/validation/paths.env and fill values, or export these variables." >&2
+  echo "validation: copy scripts/validation/paths.env.example to .local/paths.env and fill values, or export these variables." >&2
   exit 1
 fi
 

@@ -22,12 +22,5 @@ desktop.ini
 *.bats.bak
 /tmp/
 
-# Scan outputs and local validation logs (never commit)
-endor-output.json
-endor-local-*.json
-*.log
-.validation-logs/
-
-# Maintainer validation path config + rendered matrix (machine-specific)
-scripts/validation/paths.env
-.buildkite/validation/matrix.resolved.yml
+# Maintainer-only local artifacts (logs, scan JSON, paths.env, rendered matrix)
+.local/

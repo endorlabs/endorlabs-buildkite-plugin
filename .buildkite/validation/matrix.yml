@@ -1,7 +1,7 @@
 # Maintainer-only validation matrix (parametrized). Not run on every PR.
 #
 # Substitute placeholders with scripts/validation/render-matrix.sh (see
-# scripts/validation/paths.env.example). Do not commit resolved paths or
+# scripts/validation/paths.env.example → .local/paths.env). Do not commit resolved paths or
 # secrets into this file.
 #
 # Prerequisites on agents: bash, curl, docker (for container image_tar step),
@@ -237,6 +237,7 @@ steps:
               annotate: true
               tags: "validation=spring-artifacts,repo=spring-boot"
 
+  # Canonical validation target: juice-shop v20.0.0 @ f356a09207c7a9550eb6fc4c3945e081922cf998
   - group: ":javascript: juice-shop"
     steps:
       - label: "Validation juice-shop — dependencies + tools"

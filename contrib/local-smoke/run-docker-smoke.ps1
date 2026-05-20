@@ -34,8 +34,10 @@ $env:VALIDATION_WORK_DIR = ($work -replace '\\', '/')
 $env:VALIDATION_ENV_FILE = ($trimmed -replace '\\', '/')
 $ns = ((Get-Content $trimmed | Where-Object { $_ -match '^ENDOR_NAMESPACE=' } | Select-Object -First 1) -replace '^ENDOR_NAMESPACE=', '').Trim()
 
-$logDir = Join-Path $plugin '.validation-logs'
-New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+$localDir = Join-Path $plugin '.local'
+$scanDir = Join-Path $localDir 'scans'
+$logDir = Join-Path $localDir 'logs'
+New-Item -ItemType Directory -Force -Path $scanDir, $logDir | Out-Null
 $log = Join-Path $logDir "$Scenario-docker.log"
 
 $composeFile = Join-Path $contribDir 'docker-compose.yml'
@@ -53,18 +55,18 @@ switch ($Scenario) {
     'baseline' {
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES'] = 'true'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_TOOLS'] = 'true'
-        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = 'endor-local-deps-tools.json'
+        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = '/local-out/scans/endor-local-deps-tools.json'
     }
     'ai-models' {
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES'] = 'true'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_TOOLS'] = 'true'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_AI_MODELS'] = 'true'
-        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = 'endor-local-ai-models.json'
+        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = '/local-out/scans/endor-local-ai-models.json'
     }
     'soft-fail' {
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES'] = 'true'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_TOOLS'] = 'true'
-        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = 'endor-local-soft-fail.json'
+        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = '/local-out/scans/endor-local-soft-fail.json'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SOFT_FAIL'] = 'true'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_FAIL_ON_POLICY'] = 'false'
     }
@@ -72,7 +74,7 @@ switch ($Scenario) {
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER'] = 'true'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES'] = 'false'
         $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_IMAGE'] = 'alpine:3.19'
-        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = 'endor-local-container.json'
+        $pluginEnv['BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE'] = '/local-out/scans/endor-local-container.json'
     }
 }
 

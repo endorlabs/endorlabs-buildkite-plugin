@@ -13,7 +13,9 @@ Linux container, mounting a local git checkout and credentials from a
 - Docker (Docker Desktop on Windows/macOS)
 - A `.env` file with `ENDOR_API`, `ENDOR_API_CREDENTIALS_KEY`,
   `ENDOR_API_CREDENTIALS_SECRET`, and `ENDOR_NAMESPACE` (do not commit `.env`)
-- `VALIDATION_WORK_DIR` pointing at a git checkout (for example OWASP Juice Shop)
+- `VALIDATION_WORK_DIR` pointing at a git checkout of
+  [juice-shop v20.0.0](https://github.com/juice-shop/juice-shop/releases/tag/v20.0.0)
+  (`git checkout f356a09207c7a9550eb6fc4c3945e081922cf998` after clone)
 
 Do not set `ENDOR_TOKEN` in the same environment as API credentials; endorctl
 returns exit code 4 for conflicting auth.
@@ -35,8 +37,8 @@ $env:VALIDATION_WORK_DIR = "/path/to/your/checkout"
 
 Scenarios: `baseline`, `ai-models`, `soft-fail`, `container` (container needs Docker socket).
 
-Logs are written under `.validation-logs/` (gitignored). Scan JSON written under the
-workdir (`endor-local-*.json`) may contain sensitive findings — do not commit them.
+Logs and scan JSON are written under `.local/logs/` and `.local/scans/` in this
+repository (gitignored). The Juice Shop checkout is not modified with scan outputs.
 
 See [docs/maintainers/validation.md](../../docs/maintainers/validation.md) for the
 Buildkite validation matrix runbook.

@@ -18,7 +18,9 @@ docker compose run --rm tests
 Alternative:
 
 ```bash
-docker run --rm -v "${PWD}:/plugin" -w /plugin buildkite/plugin-tester:v4.3.0 bats tests/
+docker run --rm -v "${PWD}:/plugin" -w /plugin \
+  buildkite/plugin-tester@sha256:86c728d8526e22f5d26c1b65e2cae1dfb2d9767fe24d560563895d051b258c84 \
+  bats tests/
 ```
 
 On Windows, ensure `hooks/`, `lib/`, and `tests/` use LF line endings (see `.gitattributes`).
@@ -46,13 +48,18 @@ When changing scan behaviour or flags, cross-check:
 - [Endor Labs GitHub Action](https://github.com/endorlabs/github-action) — input → endorctl mapping
 - [endorctl CLI documentation](https://docs.endorlabs.com/developers-api/cli/commands/scan)
 
-Do not commit API keys, bearer tokens, or `.env` files. Tests use stubbed credentials only.
+Do not commit API keys, bearer tokens, `.env`, or anything under `.local/`. Tests use
+stubbed credentials only.
 
-## Maintainer-only local smoke tests
+## What gets pushed vs maintainer-only local runs
 
-Optional Docker-based runs with a real `endorctl` binary live under
-[contrib/local-smoke/](contrib/local-smoke/). See
-[docs/maintainers/validation.md](docs/maintainers/validation.md) for the Buildkite matrix.
+**Push to this repo:** plugin code, `plugin.yml`, `docs/examples.md`, BATS tests, and
+CI config (shellcheck, plugin-linter, BATS). That is what PRs gate.
+
+**Stay on your machine (gitignored under `.local/`):** real-scan logs, scan JSON,
+`paths.env`, rendered matrix YAML, and credentials in `.env`. Optional real scans use
+[contrib/local-smoke/](contrib/local-smoke/) — see
+[docs/maintainers/validation.md](docs/maintainers/validation.md).
 
 ## Pull requests
 

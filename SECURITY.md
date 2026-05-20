@@ -31,6 +31,5 @@ and optional finding count), not raw scan JSON or credentials.
 
 ## Maintainer local testing
 
-Scripts under `contrib/local-smoke/` read a gitignored `.env`. Do not commit
-`.validation-logs/`, `scripts/validation/paths.env`, `endor-local-*.json`, or
-other scan outputs from local runs.
+Scripts under `contrib/local-smoke/` read a gitignored `.env`. Do not commit `.local/`
+(logs, scan JSON, `paths.env`, rendered matrix YAML) or other maintainer artifacts.

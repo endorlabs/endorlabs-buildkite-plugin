@@ -16,6 +16,7 @@ services:
     volumes:
       - "${VALIDATION_PLUGIN_DIR}:/plugin:ro"
       - "${VALIDATION_WORK_DIR}:/work"
+      - "${VALIDATION_PLUGIN_DIR}/.local:/local-out"
       - "${VALIDATION_ENV_FILE}:/run/secrets/endor.env:ro"
     environment:
       BUILDKITE_PLUGIN_ENDORLABS_API_KEY_ENV: ENDOR_API_CREDENTIALS_KEY

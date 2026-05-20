@@ -41,6 +41,8 @@ export VALIDATION_WORK_DIR="$(_to_docker_path "$VALIDATION_WORK_DIR")"
 export VALIDATION_ENV_FILE="$(_to_docker_path "$VALIDATION_ENV_FILE")"
 export VALIDATION_AGENT_IMAGE="${VALIDATION_AGENT_IMAGE:-buildkite/agent:3-ubuntu-24.04}"
 
+mkdir -p "$ROOT/.local/logs" "$ROOT/.local/scans"
+
 if [[ ! -f "$VALIDATION_ENV_FILE" ]]; then
   echo "local-smoke: env file not found: $VALIDATION_ENV_FILE" >&2
   exit 1
@@ -106,18 +108,18 @@ case "$SCENARIO" in
   baseline)
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES="true"
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_TOOLS="true"
-    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="endor-local-deps-tools.json"
+    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="/local-out/scans/endor-local-deps-tools.json"
     ;;
   ai-models)
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES="true"
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_TOOLS="true"
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_AI_MODELS="true"
-    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="endor-local-ai-models.json"
+    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="/local-out/scans/endor-local-ai-models.json"
     ;;
   soft-fail)
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES="true"
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_TOOLS="true"
-    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="endor-local-soft-fail.json"
+    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="/local-out/scans/endor-local-soft-fail.json"
     export BUILDKITE_PLUGIN_ENDORLABS_SOFT_FAIL="true"
     export BUILDKITE_PLUGIN_ENDORLABS_FAIL_ON_POLICY="false"
     ;;
@@ -125,7 +127,7 @@ case "$SCENARIO" in
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER="true"
     export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES="false"
     export BUILDKITE_PLUGIN_ENDORLABS_IMAGE="alpine:3.19"
-    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="endor-local-container.json"
+    export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="/local-out/scans/endor-local-container.json"
     ;;
   *)
     echo "local-smoke: unknown scenario '$SCENARIO' (baseline|ai-models|soft-fail|container)" >&2
@@ -133,8 +135,7 @@ case "$SCENARIO" in
     ;;
 esac
 
-LOG_DIR="$ROOT/.validation-logs"
-mkdir -p "$LOG_DIR"
+LOG_DIR="$ROOT/.local/logs"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%Y%m%dT%H%M%SZ)"
 LOG_FILE="$LOG_DIR/${SCENARIO}-${STAMP}.log"
 
@@ -191,10 +192,12 @@ grep -E 'endorlabs|endorctl|annotate|soft_fail|dependencies|tools|ai-models|cont
 
 OUTPUT_FILE="${BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE:-}"
 if [[ -n "$OUTPUT_FILE" ]]; then
-  if [[ -f "$VALIDATION_WORK_DIR/$OUTPUT_FILE" ]]; then
-    echo "local-smoke: output file present: $VALIDATION_WORK_DIR/$OUTPUT_FILE"
+  host_output="${OUTPUT_FILE#/local-out/}"
+  host_output="$ROOT/.local/${host_output#/}"
+  if [[ -f "$host_output" ]]; then
+    echo "local-smoke: scan output present: $host_output"
   else
-    echo "local-smoke: output file not found on host at $VALIDATION_WORK_DIR/$OUTPUT_FILE (check container /work)" >&2
+    echo "local-smoke: scan output not found at $host_output (check container /local-out)" >&2
   fi
 fi
 

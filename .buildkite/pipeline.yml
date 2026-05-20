@@ -11,6 +11,7 @@ steps:
     plugins:
       plugin-linter#v3.3.0:
         id: endorlabs
+        image-version: v3.0.0
         readme: docs/examples.md
 
   - label: ":bash: BATS"
