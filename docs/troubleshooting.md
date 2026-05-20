@@ -30,3 +30,19 @@ when Git is detached.
 There is no first-class Buildkite OIDC flow in this plugin for SCM commenting.
 Provide a suitable PAT or bot token on the agent (for example via the
 Buildkite secrets plugin) and reference it with `scm_token_env`.
+
+## Policy exits, soft fail, and fail_on_policy
+
+- **`soft_fail: true`** — the plugin exits 0 even when endorctl returns
+  non-zero (useful for informational scans).
+- **`fail_on_policy: false`** — policy admission failure (exit `128`) is treated
+  as success; other non-zero exits still fail the step unless `soft_fail` is set.
+- **`exit_on_policy_warning: true`** — endorctl exit `129` fails the step.
+
+## Artifact sign and verify
+
+`mode: sign` and `mode: verify` call `endorctl artifact sign` / `verify` with
+the coordinates you supply. Success depends on your Endor tenant, OIDC issuer
+constraints, and artifact registry configuration — not only on plugin YAML.
+See the [GitHub Action](https://github.com/endorlabs/github-action) for the same
+required inputs.

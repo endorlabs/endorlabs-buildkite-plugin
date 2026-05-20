@@ -1,5 +1,7 @@
 # Endor Labs Buildkite Plugin
 
+[![CI](https://github.com/endorlabs/endorlabs-buildkite-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/endorlabs/endorlabs-buildkite-plugin/actions/workflows/ci.yml)
+
 Run [endorctl](https://docs.endorlabs.com) security scans in your
 [Buildkite](https://buildkite.com) pipelines: dependency (SCA), secrets, SAST,
 containers, policy gating, PR workflows, and artifact sign/verify.
@@ -9,7 +11,7 @@ This plugin aims for behavioural parity with the official
 the same flags and outputs work across CI providers.
 
 **Initial release:** `v0.1.0` — see [docs/examples.md](docs/examples.md) for pipeline
-patterns. Optional maintainer validation: [docs/phase7-validation.md](docs/phase7-validation.md).
+patterns.
 
 ## Getting started
 
@@ -168,8 +170,6 @@ modes do not overwrite each other on the same job:
 | `mode: sign` | `endorlabs-sign` |
 | `mode: verify` | `endorlabs-verify` |
 
-For a full manual validation matrix, see [`docs/phase7-validation.md`](docs/phase7-validation.md).
-
 ### Artifact signing and verification
 
 Set `mode: sign` to run `endorctl artifact sign`, or `mode: verify` to run
@@ -180,6 +180,9 @@ Set `mode: sign` to run `endorctl artifact sign`, or `mode: verify` to run
 
 Both modes continue to use the same auth configuration (`api_key_env` /
 cloud keyless), and support `additional_args` for advanced flags.
+
+Sign and verify require tenant and artifact configuration in Endor Labs; the
+plugin wires CLI flags only. See [docs/troubleshooting.md](docs/troubleshooting.md).
 
 ### Pull requests (auto-detect)
 
@@ -232,7 +235,7 @@ the user's command.
 
 If you want compile-then-scan in a single step but need the scan to run
 even when the user command fails, wrap the command yourself and call
-the plugin from a downstream step (see [PLAN.md](PLAN.md)).
+the plugin from a downstream step (see [ROADMAP.md](ROADMAP.md)).
 
 ### Scan outputs
 
@@ -242,7 +245,10 @@ The plugin does not log API keys or SCM tokens. See [SECURITY.md](SECURITY.md) a
 
 ## Developing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Quick test run:
+See [CONTRIBUTING.md](CONTRIBUTING.md). Maintainers: optional validation matrix
+and local Docker smoke tests are in [docs/maintainers/validation.md](docs/maintainers/validation.md).
+
+Quick test run:
 
 ```bash
 docker compose run --rm tests
@@ -252,7 +258,7 @@ PR scans, incremental mode, and SCM comments: [docs/troubleshooting.md](docs/tro
 
 ## Roadmap
 
-See [PLAN.md](PLAN.md).
+See [ROADMAP.md](ROADMAP.md).
 
 ## License
 

@@ -1,5 +1,10 @@
 # Examples
 
+Plugin keys mirror the official
+[Endor Labs GitHub Action](https://github.com/endorlabs/github-action) where
+applicable (`namespace`, scan toggles, PR options, container, sign/verify).
+See [`plugin.yml`](../plugin.yml) for the full schema.
+
 ## Minimal: SCA scan after build
 
 Run the user step's `command`, then scan dependencies as a `post-command`.
