@@ -1,0 +1,25 @@
+# Maintainer-only: run hooks/post-command with real endorctl in a Linux container.
+#
+# Usage (from repository root):
+#   export VALIDATION_WORK_DIR=/path/to/checkout
+#   bash contrib/local-smoke/local-smoke.sh baseline
+#
+# Required env when invoking compose directly:
+#   VALIDATION_PLUGIN_DIR  — absolute path to this plugin repo
+#   VALIDATION_WORK_DIR    — absolute path to target git checkout
+#   VALIDATION_ENV_FILE    — path to trimmed API-key .env (default: repo root .env)
+
+services:
+  local-smoke:
+    image: ${VALIDATION_AGENT_IMAGE:-buildkite/agent:3-ubuntu-24.04}
+    working_dir: /work
+    volumes:
+      - "${VALIDATION_PLUGIN_DIR}:/plugin:ro"
+      - "${VALIDATION_WORK_DIR}:/work"
+      - "${VALIDATION_ENV_FILE}:/run/secrets/endor.env:ro"
+    environment:
+      BUILDKITE_PLUGIN_ENDORLABS_API_KEY_ENV: ENDOR_API_CREDENTIALS_KEY
+      BUILDKITE_PLUGIN_ENDORLABS_API_SECRET_ENV: ENDOR_API_CREDENTIALS_SECRET
+      BUILDKITE_BRANCH: local-validation
+    entrypoint: ["/bin/bash", "-lc"]
+    command: ["echo local-smoke image ready; override command via compose run"]

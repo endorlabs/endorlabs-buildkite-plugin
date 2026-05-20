@@ -5,7 +5,7 @@ steps:
         files:
           - hooks/**
           - lib/**
-          - scripts/phase7/run-repo-matrix.sh
+          - scripts/validation/render-matrix.sh
 
   - label: ":sparkles: Plugin linter"
     plugins:

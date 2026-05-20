@@ -23,8 +23,8 @@ jobs:
             ./hooks
             ./lib
           additional_files: |
-            scripts/phase7/run-repo-matrix.sh
-            contrib/phase7-local/local-juice-shop.sh
+            scripts/validation/render-matrix.sh
+            contrib/local-smoke/local-smoke.sh
 
   plugin-linter:
     name: Plugin linter

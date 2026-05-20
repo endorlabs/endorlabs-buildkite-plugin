@@ -1,0 +1,399 @@
+# Maintainer-only validation matrix (parametrized). Not run on every PR.
+#
+# Substitute placeholders with scripts/validation/render-matrix.sh (see
+# scripts/validation/paths.env.example). Do not commit resolved paths or
+# secrets into this file.
+#
+# Prerequisites on agents: bash, curl, docker (for container image_tar step),
+# git checkouts at the substituted paths, ENDOR_API_KEY + ENDOR_API_SECRET in
+# the job environment (Buildkite secrets / env hooks).
+
+steps:
+  - group: ":snake: django-DefectDojo"
+    steps:
+      - label: "Validation defectdojo — baseline dependencies"
+        key: val-defectdojo-baseline
+        commands:
+          - cd "__VALIDATION_REPO_DEFECTDOJO__"
+          - echo "Validation scenario val-defectdojo-baseline"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_secrets: false
+              scan_sast: false
+              scan_path: .
+              annotate: true
+              output_file: endor-val-defectdojo-baseline.json
+              tags: "validation=defectdojo-baseline,repo=django-defectdojo"
+
+      - label: "Validation defectdojo — secrets + SAST"
+        key: val-defectdojo-secrets-sast
+        commands:
+          - cd "__VALIDATION_REPO_DEFECTDOJO__"
+          - echo "Validation scenario val-defectdojo-secrets-sast"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_secrets: true
+              scan_sast: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-defectdojo-secrets-sast.json
+              tags: "validation=defectdojo-secrets-sast,repo=django-defectdojo"
+
+      - label: "Validation defectdojo — SAST + disable code snippet storage"
+        key: val-defectdojo-disable-snippets
+        commands:
+          - cd "__VALIDATION_REPO_DEFECTDOJO__"
+          - echo "Validation scenario val-defectdojo-disable-snippets"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_secrets: false
+              scan_sast: true
+              disable_code_snippet_storage: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-defectdojo-disable-snippets.json
+              tags: "validation=defectdojo-disable-snippets,repo=django-defectdojo"
+
+  - group: ":golang: agent"
+    steps:
+      - label: "Validation agent — scan_tools"
+        key: val-agent-tools
+        commands:
+          - cd "__VALIDATION_REPO_AGENT__"
+          - echo "Validation scenario val-agent-tools"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_tools: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-agent-tools.json
+              tags: "validation=agent-tools,repo=agent"
+
+      - label: "Validation agent — GitHub Actions workflows"
+        key: val-agent-ghactions
+        commands:
+          - cd "__VALIDATION_REPO_AGENT__"
+          - echo "Validation scenario val-agent-ghactions"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_github_actions: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-agent-ghactions.json
+              tags: "validation=agent-ghactions,repo=agent"
+
+      - label: "Validation agent — PR-style flags via pr_baseline"
+        key: val-agent-pr-baseline
+        commands:
+          - cd "__VALIDATION_REPO_AGENT__"
+          - echo "Validation scenario val-agent-pr-baseline (no numeric BK PR required)"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              pr_baseline: main
+              pr_incremental: false
+              scan_path: .
+              annotate: true
+              output_file: endor-val-agent-pr-baseline.json
+              tags: "validation=agent-pr-baseline,repo=agent"
+
+  - group: ":leaves: mongo"
+    steps:
+      - label: "Validation mongo — constrained scan_path"
+        key: val-mongo-scan-path
+        commands:
+          - cd "__VALIDATION_REPO_MONGO__"
+          - echo "Validation scenario val-mongo-scan-path"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: src/mongo
+              annotate: true
+              output_file: endor-val-mongo-scan-path.json
+              tags: "validation=mongo-scan-path,repo=mongo"
+
+      - label: "Validation mongo — additional_args passthrough"
+        key: val-mongo-additional-args
+        commands:
+          - cd "__VALIDATION_REPO_MONGO__"
+          - echo "Validation scenario val-mongo-additional-args"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              additional_args: "--log-level=warn"
+              annotate: false
+              tags: "validation=mongo-additional-args,repo=mongo"
+
+      - label: "Validation mongo — annotate + JSON output (size sanity)"
+        key: val-mongo-annotate
+        commands:
+          - cd "__VALIDATION_REPO_MONGO__"
+          - echo "Validation scenario val-mongo-annotate"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-mongo-annotate.json
+              tags: "validation=mongo-annotate,repo=mongo"
+
+  - group: ":coffee: spring-boot"
+    steps:
+      - label: "Validation spring-boot — baseline dependencies"
+        key: val-spring-baseline
+        commands:
+          - cd "__VALIDATION_REPO_SPRING_BOOT__"
+          - echo "Validation scenario val-spring-baseline"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-spring-baseline.json
+              tags: "validation=spring-baseline,repo=spring-boot"
+
+      - label: "Validation spring-boot — SAST + exit_on_policy_warning"
+        key: val-spring-sast-policy-warning
+        commands:
+          - cd "__VALIDATION_REPO_SPRING_BOOT__"
+          - echo "Validation scenario val-spring-sast-policy-warning"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_sast: true
+              exit_on_policy_warning: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-spring-sast.json
+              tags: "validation=spring-sast-policy-warning,repo=spring-boot"
+
+      - label: "Validation spring-boot — artifact upload (JSON + SARIF)"
+        key: val-spring-artifacts
+        commands:
+          - cd "__VALIDATION_REPO_SPRING_BOOT__"
+          - echo "Validation scenario val-spring-artifacts"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: starter/spring-boot-starter
+              output_file: endor-val-spring-out.json
+              sarif_file: endor-val-spring-out.sarif
+              output_type: json
+              upload_artifacts: true
+              annotate: true
+              tags: "validation=spring-artifacts,repo=spring-boot"
+
+  - group: ":javascript: juice-shop"
+    steps:
+      - label: "Validation juice-shop — dependencies + tools"
+        key: val-juice-deps-tools
+        commands:
+          - cd "__VALIDATION_REPO_JUICE_SHOP__"
+          - echo "Validation scenario val-juice-deps-tools"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_tools: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-juice-deps-tools.json
+              tags: "validation=juice-deps-tools,repo=juice-shop"
+
+      - label: "Validation juice-shop — AI models (requires dependencies)"
+        key: val-juice-ai-models
+        commands:
+          - cd "__VALIDATION_REPO_JUICE_SHOP__"
+          - echo "Validation scenario val-juice-ai-models"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_ai_models: true
+              scan_path: .
+              annotate: true
+              output_file: endor-val-juice-ai.json
+              tags: "validation=juice-ai-models,repo=juice-shop"
+
+      - label: "Validation juice-shop — soft_fail smoke"
+        key: val-juice-soft-fail
+        commands:
+          - cd "__VALIDATION_REPO_JUICE_SHOP__"
+          - echo "Validation scenario val-juice-soft-fail"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              soft_fail: true
+              fail_on_policy: true
+              annotate: true
+              output_file: endor-val-juice-softfail.json
+              tags: "validation=juice-soft-fail,repo=juice-shop"
+
+  - group: ":docker: container scan"
+    steps:
+      - label: "Validation container — image"
+        key: val-container-image
+        commands:
+          - cd "__VALIDATION_REPO_JUICE_SHOP__"
+          - echo "Validation scenario val-container-image"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_container: true
+              image: alpine:3.19
+              project_name: validation-plugin-alpine-image
+              container_scan_path: .
+              annotate: true
+              output_file: endor-val-container-image.json
+              tags: "validation=container-image,repo=juice-shop"
+
+      - label: "Validation container — image_tar (docker save)"
+        key: val-container-image-tar
+        commands:
+          - docker pull alpine:3.19
+          - docker save alpine:3.19 -o /tmp/validation-alpine-319.tar
+          - ls -la /tmp/validation-alpine-319.tar
+          - cd "__VALIDATION_REPO_JUICE_SHOP__"
+          - echo "Validation scenario val-container-image-tar"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_container: true
+              image_tar: /tmp/validation-alpine-319.tar
+              project_name: validation-plugin-alpine-tar
+              container_scan_path: .
+              annotate: true
+              output_file: endor-val-container-tar.json
+              tags: "validation=container-image-tar,repo=juice-shop"
+
+  - group: ":closed_lock_with_key: artifact sign / verify (smoke)"
+    steps:
+      - label: "Validation sign — smoke (expect failure unless OIDC/signing configured)"
+        key: val-sign-smoke
+        commands:
+          - mkdir -p /tmp/validation-artifact
+          - echo test-bytes >/tmp/validation-artifact/demo.bin
+          - cd /tmp/validation-artifact
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: sign
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              artifact_name: "ghcr.io/example/validation-demo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+              source_repository_ref: refs/heads/main
+              certificate_oidc_issuer: https://token.actions.githubusercontent.com
+              annotate: true
+              soft_fail: true
+              tags: "validation=sign-smoke"
+
+      - label: "Validation verify — smoke (expect failure unless artifact exists)"
+        key: val-verify-smoke
+        commands:
+          - echo "Validation verify smoke"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: verify
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              artifact_name: "ghcr.io/example/validation-demo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+              certificate_oidc_issuer: https://token.actions.githubusercontent.com
+              annotate: true
+              soft_fail: true
+              tags: "validation=verify-smoke"
+
+  - group: ":traffic_light: policy / exit semantics"
+    steps:
+      - label: "Validation policy — fail_on_policy false (128 becomes success if policy blocks)"
+        key: val-fail-on-policy-false
+        commands:
+          - cd "__VALIDATION_REPO_JUICE_SHOP__"
+          - echo "Validation scenario val-fail-on-policy-false"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              fail_on_policy: false
+              annotate: true
+              output_file: endor-val-failonpolicy-false.json
+              tags: "validation=fail-on-policy-false,repo=juice-shop"

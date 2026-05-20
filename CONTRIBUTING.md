@@ -35,7 +35,7 @@ Pull requests and pushes to `main` run [.github/workflows/ci.yml](.github/workfl
 
 This repository’s `.buildkite/pipeline.yml` runs the same checks on Buildkite:
 
-1. **shellcheck** on `hooks/**`, `lib/**`, and `scripts/phase7/run-repo-matrix.sh`
+1. **shellcheck** on `hooks/**`, `lib/**`, and `scripts/validation/render-matrix.sh`
 2. **plugin-linter** with `id: endorlabs` and `readme: docs/examples.md`
 3. **BATS** via `docker-compose#v5.0.0`
 
@@ -51,8 +51,8 @@ Do not commit API keys, bearer tokens, or `.env` files. Tests use stubbed creden
 ## Maintainer-only local smoke tests
 
 Optional Docker-based runs with a real `endorctl` binary live under
-[contrib/phase7-local/](contrib/phase7-local/). See
-[docs/phase7-validation.md](docs/phase7-validation.md) for the Buildkite matrix.
+[contrib/local-smoke/](contrib/local-smoke/). See
+[docs/maintainers/validation.md](docs/maintainers/validation.md) for the Buildkite matrix.
 
 ## Pull requests
 

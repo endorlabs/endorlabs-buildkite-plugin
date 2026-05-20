@@ -1,4 +1,4 @@
-# Maintainer-only: run a local Phase 7 scenario via docker-compose.phase7-local.yml.
+# Maintainer-only: run a local validation scenario via contrib/local-smoke/docker-compose.yml.
 # Does not print secret values. Requires Docker Desktop.
 param(
     [Parameter(Mandatory = $true)]
@@ -8,19 +8,19 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $contribDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$plugin = if ($env:PHASE7_PLUGIN_DIR) { $env:PHASE7_PLUGIN_DIR } else {
+$plugin = if ($env:VALIDATION_PLUGIN_DIR) { $env:VALIDATION_PLUGIN_DIR } else {
     (Resolve-Path (Join-Path $contribDir '../..')).Path
 }
-if (-not $env:PHASE7_WORK_DIR) {
-    Write-Error 'Set PHASE7_WORK_DIR to the absolute path of the target git checkout.'
+if (-not $env:VALIDATION_WORK_DIR) {
+    Write-Error 'Set VALIDATION_WORK_DIR to the absolute path of the target git checkout.'
 }
-$work = $env:PHASE7_WORK_DIR
+$work = $env:VALIDATION_WORK_DIR
 $allow = @('ENDOR_API', 'ENDOR_API_CREDENTIALS_KEY', 'ENDOR_API_CREDENTIALS_SECRET', 'ENDOR_NAMESPACE')
 $envFile = Join-Path $plugin '.env'
 if (-not (Test-Path $envFile)) {
     Write-Error "Missing .env at $envFile (gitignored; create locally for maintainer smoke tests)."
 }
-$trimmed = Join-Path $env:TEMP 'phase7-trimmed.env'
+$trimmed = Join-Path $env:TEMP 'validation-trimmed.env'
 $lines = Get-Content $envFile | ForEach-Object {
     if ($_ -match '^\s*#' -or $_ -match '^\s*$') { return }
     if ($_ -match '^([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {
@@ -29,16 +29,16 @@ $lines = Get-Content $envFile | ForEach-Object {
     }
 }
 [System.IO.File]::WriteAllText($trimmed, ($lines -join "`n") + "`n")
-$env:PHASE7_PLUGIN_DIR = ($plugin -replace '\\', '/')
-$env:PHASE7_WORK_DIR = ($work -replace '\\', '/')
-$env:PHASE7_ENV_FILE = ($trimmed -replace '\\', '/')
+$env:VALIDATION_PLUGIN_DIR = ($plugin -replace '\\', '/')
+$env:VALIDATION_WORK_DIR = ($work -replace '\\', '/')
+$env:VALIDATION_ENV_FILE = ($trimmed -replace '\\', '/')
 $ns = ((Get-Content $trimmed | Where-Object { $_ -match '^ENDOR_NAMESPACE=' } | Select-Object -First 1) -replace '^ENDOR_NAMESPACE=', '').Trim()
 
-$logDir = Join-Path $plugin '.phase7-logs'
+$logDir = Join-Path $plugin '.validation-logs'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $log = Join-Path $logDir "$Scenario-docker.log"
 
-$composeFile = Join-Path $contribDir 'docker-compose.phase7-local.yml'
+$composeFile = Join-Path $contribDir 'docker-compose.yml'
 $pluginEnv = @{
     'BUILDKITE_PLUGIN_ENDORLABS_NAMESPACE'             = $ns
     'BUILDKITE_PLUGIN_ENDORLABS_API_KEY_ENV'           = 'ENDOR_API_CREDENTIALS_KEY'
@@ -46,7 +46,7 @@ $pluginEnv = @{
     'BUILDKITE_PLUGIN_ENDORLABS_SCAN_PATH'             = '.'
     'BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE'              = 'true'
     'BUILDKITE_PLUGIN_ENDORLABS_ADDITIONAL_ARGS'       = '--bypass-host-check'
-    'BUILDKITE_BRANCH'                                 = 'local-phase7'
+    'BUILDKITE_BRANCH'                                 = 'local-validation'
 }
 
 switch ($Scenario) {
@@ -84,11 +84,11 @@ if ($Scenario -eq 'container') {
     $dockerArgs += @('-v', '/var/run/docker.sock:/var/run/docker.sock')
 }
 $dockerArgs += @(
-    'phase7',
+    'local-smoke',
     'set -a && . /run/secrets/endor.env && set +a && export PATH=/usr/local/bin:$PATH && cd /work && bash /plugin/hooks/post-command'
 )
 
-Write-Host "phase7: scenario=$Scenario log=$log"
+Write-Host "local-smoke: scenario=$Scenario log=$log"
 & docker @dockerArgs 2>&1 | Tee-Object -FilePath $log
-Write-Host "phase7: hook exit=$LASTEXITCODE"
+Write-Host "local-smoke: hook exit=$LASTEXITCODE"
 exit $LASTEXITCODE

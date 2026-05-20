@@ -26,8 +26,8 @@ desktop.ini
 endor-output.json
 endor-local-*.json
 *.log
-.phase7-logs/
+.validation-logs/
 
-# Phase 7 path config + rendered pipeline (machine-specific)
-scripts/phase7/phase7.paths.env
-.buildkite/pipeline.phase7.resolved.yml
+# Maintainer validation path config + rendered matrix (machine-specific)
+scripts/validation/paths.env
+.buildkite/validation/matrix.resolved.yml
