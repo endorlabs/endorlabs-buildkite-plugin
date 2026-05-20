@@ -1,0 +1,33 @@
+# Local secrets and credentials
+.env
+.env.*
+
+# Local-only agent / IDE guidance (not for the public repo)
+AGENTS.md
+.cursor/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# BATS / test scratch
+*.bats.bak
+/tmp/
+
+# Scan outputs and local validation logs (never commit)
+endor-output.json
+endor-local-*.json
+*.log
+.phase7-logs/
+
+# Phase 7 path config + rendered pipeline (machine-specific)
+scripts/phase7/phase7.paths.env
+.buildkite/pipeline.phase7.resolved.yml

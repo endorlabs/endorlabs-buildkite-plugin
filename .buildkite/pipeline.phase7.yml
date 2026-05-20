@@ -1,0 +1,399 @@
+# Phase 7 — real-repo validation matrix (parametrized).
+#
+# Substitute placeholders with scripts/phase7/run-repo-matrix.sh (see
+# scripts/phase7/phase7.paths.env.example). Do not commit resolved paths or
+# secrets into this file.
+#
+# Prerequisites on agents: bash, curl, docker (for container image_tar step),
+# git checkouts at the substituted paths, ENDOR_API_KEY + ENDOR_API_SECRET in
+# the job environment (Buildkite secrets / env hooks).
+
+steps:
+  - group: ":snake: django-DefectDojo"
+    steps:
+      - label: "P7 defectdojo — baseline dependencies"
+        key: p7-defectdojo-baseline
+        commands:
+          - cd "__PHASE7_REPO_DEFECTDOJO__"
+          - echo "Phase7 scenario p7-defectdojo-baseline"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_secrets: false
+              scan_sast: false
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-defectdojo-baseline.json
+              tags: "phase7=defectdojo-baseline,repo=django-defectdojo"
+
+      - label: "P7 defectdojo — secrets + SAST"
+        key: p7-defectdojo-secrets-sast
+        commands:
+          - cd "__PHASE7_REPO_DEFECTDOJO__"
+          - echo "Phase7 scenario p7-defectdojo-secrets-sast"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_secrets: true
+              scan_sast: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-defectdojo-secrets-sast.json
+              tags: "phase7=defectdojo-secrets-sast,repo=django-defectdojo"
+
+      - label: "P7 defectdojo — SAST + disable code snippet storage"
+        key: p7-defectdojo-disable-snippets
+        commands:
+          - cd "__PHASE7_REPO_DEFECTDOJO__"
+          - echo "Phase7 scenario p7-defectdojo-disable-snippets"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_secrets: false
+              scan_sast: true
+              disable_code_snippet_storage: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-defectdojo-disable-snippets.json
+              tags: "phase7=defectdojo-disable-snippets,repo=django-defectdojo"
+
+  - group: ":golang: agent"
+    steps:
+      - label: "P7 agent — scan_tools"
+        key: p7-agent-tools
+        commands:
+          - cd "__PHASE7_REPO_AGENT__"
+          - echo "Phase7 scenario p7-agent-tools"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_tools: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-agent-tools.json
+              tags: "phase7=agent-tools,repo=agent"
+
+      - label: "P7 agent — GitHub Actions workflows"
+        key: p7-agent-ghactions
+        commands:
+          - cd "__PHASE7_REPO_AGENT__"
+          - echo "Phase7 scenario p7-agent-ghactions"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_github_actions: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-agent-ghactions.json
+              tags: "phase7=agent-ghactions,repo=agent"
+
+      - label: "P7 agent — PR-style flags via pr_baseline"
+        key: p7-agent-pr-baseline
+        commands:
+          - cd "__PHASE7_REPO_AGENT__"
+          - echo "Phase7 scenario p7-agent-pr-baseline (no numeric BK PR required)"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              pr_baseline: main
+              pr_incremental: false
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-agent-pr-baseline.json
+              tags: "phase7=agent-pr-baseline,repo=agent"
+
+  - group: ":leaves: mongo"
+    steps:
+      - label: "P7 mongo — constrained scan_path"
+        key: p7-mongo-scan-path
+        commands:
+          - cd "__PHASE7_REPO_MONGO__"
+          - echo "Phase7 scenario p7-mongo-scan-path"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: src/mongo
+              annotate: true
+              output_file: endor-p7-mongo-scan-path.json
+              tags: "phase7=mongo-scan-path,repo=mongo"
+
+      - label: "P7 mongo — additional_args passthrough"
+        key: p7-mongo-additional-args
+        commands:
+          - cd "__PHASE7_REPO_MONGO__"
+          - echo "Phase7 scenario p7-mongo-additional-args"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              additional_args: "--log-level=warn"
+              annotate: false
+              tags: "phase7=mongo-additional-args,repo=mongo"
+
+      - label: "P7 mongo — annotate + JSON output (size sanity)"
+        key: p7-mongo-annotate
+        commands:
+          - cd "__PHASE7_REPO_MONGO__"
+          - echo "Phase7 scenario p7-mongo-annotate"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-mongo-annotate.json
+              tags: "phase7=mongo-annotate,repo=mongo"
+
+  - group: ":coffee: spring-boot"
+    steps:
+      - label: "P7 spring-boot — baseline dependencies"
+        key: p7-spring-baseline
+        commands:
+          - cd "__PHASE7_REPO_SPRING_BOOT__"
+          - echo "Phase7 scenario p7-spring-baseline"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-spring-baseline.json
+              tags: "phase7=spring-baseline,repo=spring-boot"
+
+      - label: "P7 spring-boot — SAST + exit_on_policy_warning"
+        key: p7-spring-sast-policy-warning
+        commands:
+          - cd "__PHASE7_REPO_SPRING_BOOT__"
+          - echo "Phase7 scenario p7-spring-sast-policy-warning"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_sast: true
+              exit_on_policy_warning: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-spring-sast.json
+              tags: "phase7=spring-sast-policy-warning,repo=spring-boot"
+
+      - label: "P7 spring-boot — artifact upload (JSON + SARIF)"
+        key: p7-spring-artifacts
+        commands:
+          - cd "__PHASE7_REPO_SPRING_BOOT__"
+          - echo "Phase7 scenario p7-spring-artifacts"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: starter/spring-boot-starter
+              output_file: endor-p7-spring-out.json
+              sarif_file: endor-p7-spring-out.sarif
+              output_type: json
+              upload_artifacts: true
+              annotate: true
+              tags: "phase7=spring-artifacts,repo=spring-boot"
+
+  - group: ":javascript: juice-shop"
+    steps:
+      - label: "P7 juice-shop — dependencies + tools"
+        key: p7-juice-deps-tools
+        commands:
+          - cd "__PHASE7_REPO_JUICE_SHOP__"
+          - echo "Phase7 scenario p7-juice-deps-tools"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_tools: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-juice-deps-tools.json
+              tags: "phase7=juice-deps-tools,repo=juice-shop"
+
+      - label: "P7 juice-shop — AI models (requires dependencies)"
+        key: p7-juice-ai-models
+        commands:
+          - cd "__PHASE7_REPO_JUICE_SHOP__"
+          - echo "Phase7 scenario p7-juice-ai-models"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_ai_models: true
+              scan_path: .
+              annotate: true
+              output_file: endor-p7-juice-ai.json
+              tags: "phase7=juice-ai-models,repo=juice-shop"
+
+      - label: "P7 juice-shop — soft_fail smoke"
+        key: p7-juice-soft-fail
+        commands:
+          - cd "__PHASE7_REPO_JUICE_SHOP__"
+          - echo "Phase7 scenario p7-juice-soft-fail"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              soft_fail: true
+              fail_on_policy: true
+              annotate: true
+              output_file: endor-p7-juice-softfail.json
+              tags: "phase7=juice-soft-fail,repo=juice-shop"
+
+  - group: ":docker: container scan"
+    steps:
+      - label: "P7 container — image"
+        key: p7-container-image
+        commands:
+          - cd "__PHASE7_REPO_JUICE_SHOP__"
+          - echo "Phase7 scenario p7-container-image"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_container: true
+              image: alpine:3.19
+              project_name: phase7-plugin-alpine-image
+              container_scan_path: .
+              annotate: true
+              output_file: endor-p7-container-image.json
+              tags: "phase7=container-image,repo=juice-shop"
+
+      - label: "P7 container — image_tar (docker save)"
+        key: p7-container-image-tar
+        commands:
+          - docker pull alpine:3.19
+          - docker save alpine:3.19 -o /tmp/phase7-alpine-319.tar
+          - ls -la /tmp/phase7-alpine-319.tar
+          - cd "__PHASE7_REPO_JUICE_SHOP__"
+          - echo "Phase7 scenario p7-container-image-tar"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              scan_container: true
+              image_tar: /tmp/phase7-alpine-319.tar
+              project_name: phase7-plugin-alpine-tar
+              container_scan_path: .
+              annotate: true
+              output_file: endor-p7-container-tar.json
+              tags: "phase7=container-image-tar,repo=juice-shop"
+
+  - group: ":closed_lock_with_key: artifact sign / verify (smoke)"
+    steps:
+      - label: "P7 sign — smoke (expect failure unless OIDC/signing configured)"
+        key: p7-sign-smoke
+        commands:
+          - mkdir -p /tmp/phase7-artifact
+          - echo test-bytes >/tmp/phase7-artifact/demo.bin
+          - cd /tmp/phase7-artifact
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: sign
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              artifact_name: "ghcr.io/example/phase7-demo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+              source_repository_ref: refs/heads/main
+              certificate_oidc_issuer: https://token.actions.githubusercontent.com
+              annotate: true
+              soft_fail: true
+              tags: "phase7=sign-smoke"
+
+      - label: "P7 verify — smoke (expect failure unless artifact exists)"
+        key: p7-verify-smoke
+        commands:
+          - echo "Phase7 verify smoke"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: verify
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: false
+              artifact_name: "ghcr.io/example/phase7-demo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+              certificate_oidc_issuer: https://token.actions.githubusercontent.com
+              annotate: true
+              soft_fail: true
+              tags: "phase7=verify-smoke"
+
+  - group: ":traffic_light: policy / exit semantics"
+    steps:
+      - label: "P7 policy — fail_on_policy false (128 becomes success if policy blocks)"
+        key: p7-fail-on-policy-false
+        commands:
+          - cd "__PHASE7_REPO_JUICE_SHOP__"
+          - echo "Phase7 scenario p7-fail-on-policy-false"
+        plugins:
+          - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
+              mode: scan
+              namespace: "__ENDOR_NAMESPACE__"
+              api_key_env: ENDOR_API_KEY
+              api_secret_env: ENDOR_API_SECRET
+              scan_dependencies: true
+              scan_path: .
+              fail_on_policy: false
+              annotate: true
+              output_file: endor-p7-failonpolicy-false.json
+              tags: "phase7=fail-on-policy-false,repo=juice-shop"

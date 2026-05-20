@@ -1,0 +1,345 @@
+# Examples
+
+## Minimal: SCA scan after build
+
+Run the user step's `command`, then scan dependencies as a `post-command`.
+
+```yaml
+steps:
+  - label: ":hammer: Build and scan"
+    command: "make build"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+```
+
+The plugin requires API credentials to be present on the agent under
+the env-var names you pass in `api_key_env` / `api_secret_env`. Use the
+Buildkite `secrets` plugin (or your agent's secret manager) to populate
+those variables — never commit them to your pipeline file.
+
+## Pin endorctl version
+
+Pin a specific endorctl release and verify its SHA-256 checksum at install
+time. Pinning is recommended for reproducible builds.
+
+```yaml
+steps:
+  - command: "make build"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          endorctl_version: "1.2.3"
+          endorctl_checksum: "<sha256-of-the-binary-for-your-platform>"
+```
+
+## Skip install (agent has endorctl baked in)
+
+If your Buildkite agent image already includes `endorctl` on `PATH`, you
+can skip the download.
+
+```yaml
+steps:
+  - command: "make build"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          endorctl_skip_install: true
+```
+
+## Keyless auth: AWS role ARN
+
+```yaml
+steps:
+  - command: "make test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          aws_role_arn: "arn:aws:iam::123456789012:role/endorlabs-federation-role"
+```
+
+## Keyless auth: Azure managed identity
+
+```yaml
+steps:
+  - command: "make test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          enable_azure_managed_identity: true
+```
+
+## Keyless auth: GCP service account
+
+```yaml
+steps:
+  - command: "make test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          gcp_service_account: "endorlabs-federation@my-project.iam.gserviceaccount.com"
+```
+
+## SARIF output + scan path
+
+Emit SARIF for upload to GitHub Code Scanning or other tools, and limit
+the scan to a sub-directory of the checkout.
+
+```yaml
+steps:
+  - command: "./gradlew assemble"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          scan_path: "services/api"
+          sarif_file: "endor.sarif"
+          output_type: "json"
+```
+
+## Multi-signal repo scan (Phase 2 toggles)
+
+Enable additional scan kinds beyond dependencies.
+
+```yaml
+steps:
+  - command: "./gradlew test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          scan_dependencies: true
+          scan_secrets: true
+          scan_sast: true
+          scan_tools: true
+          scan_github_actions: true
+          phantom_dependencies: true
+```
+
+## Bazel scan (repro-sandbox style)
+
+Use this pattern for Bazel monorepos (adjust targets and query to your workspace).
+
+```yaml
+steps:
+  - command: "bazel test //..."
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          scan_dependencies: true
+          use_bazel: true
+          bazel_include_targets: "//..."
+          bazel_exclude_targets: "//third_party/..."
+          bazel_targets_query: "kind(go_library, //...)"
+```
+
+## Pull-request scans (auto-detect)
+
+On PR-triggered pipelines, Buildkite sets `BUILDKITE_PULL_REQUEST` to the pull
+request number (digits only), and usually sets `BUILDKITE_BRANCH` and
+`BUILDKITE_PULL_REQUEST_BASE_BRANCH`. With `pr` omitted or `true`, the plugin
+maps these to `--detached-ref-name`, `--pr=true`, `--scm-pr-id`, and
+`--pr-baseline` (from the base branch when you do not override `pr_baseline`).
+
+```yaml
+steps:
+  - command: "make test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+```
+
+## Explicit PR baseline
+
+When Buildkite does not populate the base branch (or you need a non-default
+target), set `pr_baseline` explicitly. It overrides `BUILDKITE_PULL_REQUEST_BASE_BRANCH`.
+
+```yaml
+steps:
+  - command: "make test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          pr_baseline: "release/2.x"
+```
+
+## Incremental PR scan
+
+Enable `pr_incremental` for dependency scans that only consider changes relative
+to the baseline. You need a numeric `BUILDKITE_PULL_REQUEST` or `pr_baseline`,
+and either `BUILDKITE_PULL_REQUEST_BASE_BRANCH`, `pr_baseline`, or
+`enable_pr_comments` so a baseline exists (comments mode lets endorctl infer the
+merge target).
+
+```yaml
+steps:
+  - command: "make test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          pr_incremental: true
+```
+
+## PR comments (SCM token indirection)
+
+Use a Buildkite secret or the `secrets` plugin to expose an SCM token on the
+agent (for example as `ENDOR_SCM_TOKEN`). Point `scm_token_env` at the variable
+**name**. The plugin passes `--enable-pr-comments=true`, `--scm-pr-id`, and
+`--scm-token` to endorctl and never prints the token. This requires a
+pull-request build (numeric `BUILDKITE_PULL_REQUEST`) and does not rely on
+Buildkite-native OIDC to GitHub.
+
+```yaml
+steps:
+  - command: "make test"
+    env:
+      # In real pipelines, inject via the secrets plugin or agent environment.
+      ENDOR_SCM_TOKEN: "replace-with-secret"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          enable_pr_comments: true
+          scm_token_env: "ENDOR_SCM_TOKEN"
+```
+
+## Extra endorctl flags
+
+Use `additional_args` for any endorctl flag not yet exposed as a first-class
+plugin option (the string is split on whitespace and appended verbatim).
+
+```yaml
+steps:
+  - command: "make build"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          additional_args: "--phantom-dependencies=true --tools=true"
+```
+
+## Buildkite annotation summary
+
+Enable an annotation card with sanitized scan status.
+
+```yaml
+steps:
+  - command: "make build"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          annotate: true
+```
+
+## Container scan (repository-associated)
+
+Use `scan_container: true` to switch to `endorctl container scan`. For
+repository-associated container scans, set `container_scan_path` to the same
+path used for source scans.
+
+```yaml
+steps:
+  - command: "docker build -t ghcr.io/acme/demo:${BUILDKITE_COMMIT} ."
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          scan_dependencies: false
+          scan_container: true
+          image: "ghcr.io/acme/demo:${BUILDKITE_COMMIT}"
+          container_scan_path: "."
+          os_reachability: true
+```
+
+## Container scan (standalone project with tarball)
+
+For base images or golden images, scan a tarball and persist image versions
+using `as_ref`.
+
+```yaml
+steps:
+  - command: "docker save ghcr.io/acme/base:latest -o /tmp/base-latest.tar"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          scan_dependencies: false
+          scan_container: true
+          image_tar: "/tmp/base-latest.tar"
+          project_name: "golden-base-images"
+          as_ref: true
+          project_tags: "team=platform,tier=base"
+```
+
+## Artifact signing mode
+
+```yaml
+steps:
+  - command: "make release"
+    plugins:
+      - endorlabs#v0.1.0:
+          mode: "sign"
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          artifact_name: "ghcr.io/acme/demo@sha256:${IMAGE_DIGEST}"
+          source_repository_ref: "refs/heads/main"
+          certificate_oidc_issuer: "https://token.actions.githubusercontent.com"
+          source_repository: "acme/demo"
+          source_repository_owner: "acme"
+```
+
+## Artifact verify mode
+
+```yaml
+steps:
+  - command: "make verify-release"
+    plugins:
+      - endorlabs#v0.1.0:
+          mode: "verify"
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          artifact_name: "ghcr.io/acme/demo@sha256:${IMAGE_DIGEST}"
+          certificate_oidc_issuer: "https://token.actions.githubusercontent.com"
+```
+
+## Soft fail and artifact upload controls
+
+```yaml
+steps:
+  - command: "make test"
+    plugins:
+      - endorlabs#v0.1.0:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_KEY"
+          api_secret_env: "ENDOR_API_SECRET"
+          output_file: "endor-output.json"
+          sarif_file: "endor.sarif"
+          annotate: true
+          fail_on_policy: false
+          soft_fail: true
+          upload_artifacts: true
+```

@@ -1,0 +1,25 @@
+# Maintainer-only: run hooks/post-command with real endorctl in a Linux container.
+#
+# Usage (from repository root):
+#   export PHASE7_WORK_DIR=/path/to/checkout
+#   bash contrib/phase7-local/local-juice-shop.sh baseline
+#
+# Required env when invoking compose directly:
+#   PHASE7_PLUGIN_DIR  — absolute path to this plugin repo
+#   PHASE7_WORK_DIR    — absolute path to target git checkout
+#   PHASE7_ENV_FILE    — path to trimmed API-key .env (default: repo root .env)
+
+services:
+  phase7:
+    image: ${PHASE7_AGENT_IMAGE:-buildkite/agent:3-ubuntu-24.04}
+    working_dir: /work
+    volumes:
+      - "${PHASE7_PLUGIN_DIR}:/plugin:ro"
+      - "${PHASE7_WORK_DIR}:/work"
+      - "${PHASE7_ENV_FILE}:/run/secrets/endor.env:ro"
+    environment:
+      BUILDKITE_PLUGIN_ENDORLABS_API_KEY_ENV: ENDOR_API_CREDENTIALS_KEY
+      BUILDKITE_PLUGIN_ENDORLABS_API_SECRET_ENV: ENDOR_API_CREDENTIALS_SECRET
+      BUILDKITE_BRANCH: local-phase7
+    entrypoint: ["/bin/bash", "-lc"]
+    command: ["echo phase7 image ready; override command via compose run"]

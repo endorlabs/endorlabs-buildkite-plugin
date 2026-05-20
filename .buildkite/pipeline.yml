@@ -1,0 +1,20 @@
+steps:
+  - label: ":shell: Shellcheck"
+    plugins:
+      shellcheck#v1.4.0:
+        files:
+          - hooks/**
+          - lib/**
+          - scripts/phase7/run-repo-matrix.sh
+
+  - label: ":sparkles: Plugin linter"
+    plugins:
+      plugin-linter#v3.3.0:
+        id: endorlabs
+        readme: docs/examples.md
+
+  - label: ":bash: BATS"
+    plugins:
+      docker-compose#v5.0.0:
+        run: tests
+        config: docker-compose.yml

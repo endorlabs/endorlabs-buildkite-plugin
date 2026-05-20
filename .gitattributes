@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+*.bash text eol=lf
+*.sh text eol=lf
+*.bats text eol=lf
+hooks/* text eol=lf
+lib/* text eol=lf

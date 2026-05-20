@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=lib/shared.bash
+. "$DIR/../lib/shared.bash"
+# shellcheck source=lib/endorctl.bash
+. "$DIR/../lib/endorctl.bash"
+# shellcheck source=lib/validate.bash
+. "$DIR/../lib/validate.bash"
+
+configure_endorctl
+validate_scan_config
+install_endorctl
+configure_auth
+set +e
+run_endorctl_mode
+scan_exit_code=$?
+set -e
+annotate_scan "$scan_exit_code"
+upload_artifacts_if_configured
+effective_exit_code="$(resolve_effective_exit_code "$scan_exit_code")"
+exit "$effective_exit_code"

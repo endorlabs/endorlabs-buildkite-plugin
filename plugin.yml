@@ -1,0 +1,181 @@
+name: Endor Labs
+description: Scan with endorctl in your Buildkite pipelines
+author: https://github.com/endorlabs
+requirements:
+  - bash
+  - curl
+configuration:
+  properties:
+    mode:
+      type: string
+      enum: [ "scan", "sign", "verify" ]
+      default: "scan"
+    namespace:
+      type: string
+    api:
+      type: string
+    api_key_env:
+      type: string
+    api_secret_env:
+      type: string
+    aws_role_arn:
+      type: string
+      description: >-
+        AWS keyless auth role ARN passed to endorctl as --aws-role-arn. Use on
+        EC2/EKS agents with ambient AWS credentials (instance profile or IRSA).
+    enable_azure_managed_identity:
+      type: boolean
+      default: false
+      description: >-
+        Enable Azure keyless auth via managed identity
+        (--enable-azure-managed-identity).
+    gcp_service_account:
+      type: string
+      description: >-
+        GCP keyless auth target service account passed as
+        --gcp-service-account. Typically the Endor federation service account.
+    scan_dependencies:
+      type: boolean
+    scan_secrets:
+      type: boolean
+    scan_sast:
+      type: boolean
+    scan_git_logs:
+      type: boolean
+    scan_github_actions:
+      type: boolean
+    scan_ai_models:
+      type: boolean
+    scan_tools:
+      type: boolean
+    scan_package:
+      type: boolean
+    scan_container:
+      type: boolean
+      default: false
+    phantom_dependencies:
+      type: boolean
+    disable_code_snippet_storage:
+      type: boolean
+    use_bazel:
+      type: boolean
+    bazel_include_targets:
+      type: string
+    bazel_exclude_targets:
+      type: string
+    bazel_targets_query:
+      type: string
+    scan_path:
+      type: string
+    project_name:
+      type: string
+    image:
+      type: string
+    image_tar:
+      type: string
+    as_ref:
+      type: boolean
+      default: false
+    os_reachability:
+      type: boolean
+      default: false
+    project_tags:
+      type: string
+    container_scan_path:
+      type: string
+    profiling_data_dir:
+      type: string
+    artifact_name:
+      type: string
+    certificate_oidc_issuer:
+      type: string
+    certificate_identity:
+      type: string
+    source_repository_ref:
+      type: string
+    source_repository:
+      type: string
+    source_repository_owner:
+      type: string
+    source_repository_digest:
+      type: string
+    build_config_name:
+      type: string
+    build_config_digest:
+      type: string
+    runner_environment:
+      type: string
+    endorctl_version:
+      type: string
+    endorctl_checksum:
+      type: string
+    endorctl_skip_install:
+      type: boolean
+    log_level:
+      type: string
+      enum: [ "debug", "info", "warn", "error", "fatal" ]
+    log_verbose:
+      type: boolean
+    output_type:
+      type: string
+      enum: [ "json", "yaml", "summary", "table" ]
+    sarif_file:
+      type: string
+    output_file:
+      type: string
+    tags:
+      type: string
+    exit_on_policy_warning:
+      type: boolean
+    annotate:
+      type: boolean
+    soft_fail:
+      type: boolean
+      default: false
+    fail_on_policy:
+      type: boolean
+      default: true
+    upload_artifacts:
+      type: boolean
+      default: false
+    artifact_paths:
+      type: string
+    pr:
+      type: boolean
+      description: >-
+        When false, never enable PR scan flags even on pull-request builds
+        (numeric BUILDKITE_PULL_REQUEST). When true or omitted, PR mode is
+        enabled when Buildkite exposes a numeric pull request id, or when
+        pr_baseline is set (explicit baseline implies a PR-style scan).
+    pr_baseline:
+      type: string
+      description: >-
+        Git ref for the merge target (e.g. main). Overrides
+        BUILDKITE_PULL_REQUEST_BASE_BRANCH when both are present. With
+        enable_pr_comments, endorctl can infer the baseline from the PR unless
+        you set this explicitly.
+    pr_incremental:
+      type: boolean
+      default: false
+      description: >-
+        Incremental PR scan (--pr-incremental=true). Requires a numeric
+        BUILDKITE_PULL_REQUEST or pr_baseline, and baseline context via
+        pr_baseline, BUILDKITE_PULL_REQUEST_BASE_BRANCH, or enable_pr_comments.
+    enable_pr_comments:
+      type: boolean
+      default: false
+      description: >-
+        Post findings as SCM review comments (--enable-pr-comments=true).
+        Requires a pull-request build (numeric BUILDKITE_PULL_REQUEST), pr not
+        false, and scm_token_env pointing to a non-empty token.
+    scm_token_env:
+      type: string
+      description: >-
+        Name of an environment variable whose value is passed to endorctl as
+        --scm-token when enable_pr_comments is true. The token value is never
+        printed by the plugin.
+    additional_args:
+      type: string
+  required:
+    - namespace
+  additionalProperties: false
