@@ -28,6 +28,18 @@ Hosted agents clone the plugin by git ref (`ENDORLABS_BUILDKITE_PLUGIN`). If `en
 2. Or set pipeline env `ENDORLABS_BUILDKITE_PLUGIN_SPEC` to a full `repo#ref` URL (one variable — do not split with `}#${` in YAML). Use `https://github.com/org/repo.git#main` or `ssh://git@github.com/org/repo.git#main`, not `git@github.com:org/repo.git` (colon form fails plugin parse).
 3. De-risk first: run the plugin repo’s **validation-smoke** pipeline (uses `$BUILDKITE_REPO#$BUILDKITE_COMMIT` — no separate plugin clone).
 
+## Required pipeline environment variables
+
+Set on **repro-sandbox → Settings → Environment variables** (Buildkite UI):
+
+| Variable | Example |
+|----------|---------|
+| `ENDOR_NAMESPACE` | your Endor tenant namespace (from `.env`) |
+
+`ENDORLABS_BUILDKITE_PLUGIN_SPEC` is optional: repro-sandbox sets a default in [`.buildkite/hooks/environment`](https://github.com/tgowan-endor/repro-sandbox/blob/dev/.buildkite/hooks/environment) (`https://github.com/endorlabs/endorlabs-buildkite-plugin.git#main`). Override on the pipeline if you need another ref.
+
+**Do not** put `repo##main` in `pipeline.yml` — Buildkite interpolation leaves `##` literal and plugin checkout fails.
+
 ## Secrets (Buildkite UI — required)
 
 The REST API cannot set pipeline secrets on all plans. In Buildkite:
