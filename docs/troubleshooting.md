@@ -45,7 +45,8 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   `ENDORLABS_BUILDKITE_PLUGIN_SPEC=git@github.com:endorlabs/endorlabs-buildkite-plugin.git#main`).
   Do not write `"${PLUGIN}#${REF}"` in pipeline YAML — Buildkite interpolation fails on `}#${`.
 - **`pipeline upload` failed: Expected identifier… got #** — combine plugin repo and ref
-  into a single variable, or use `./` when the plugin is the checked-out repository.
+  into a single variable, use `./` when the plugin is the checked-out repository, or escape
+  a literal `#` in pipeline env defaults as `##` ([Buildkite docs](https://buildkite.com/docs/pipelines/configure/definitions#encode-unsafe-characters)).
 
 ## Policy exits, soft fail, and fail_on_policy
 
