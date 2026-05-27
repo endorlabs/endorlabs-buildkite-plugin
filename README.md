@@ -256,7 +256,7 @@ The plugin does not log API keys or SCM tokens. See [SECURITY.md](SECURITY.md) a
 steps:
   - command: "make build"
     plugins:
-      - git@github.com:endorlabs/endorlabs-buildkite-plugin.git#main:
+      - https://github.com/endorlabs/endorlabs-buildkite-plugin.git#main:
           namespace: "${ENDOR_NAMESPACE}"
           api_key_env: ENDOR_API_CREDENTIALS_KEY
           api_secret_env: ENDOR_API_CREDENTIALS_SECRET
