@@ -25,7 +25,7 @@ Do **not** set `ENDOR_TOKEN` on agents when using API keys (endorctl exit `4`).
 Hosted agents clone the plugin by git ref (`ENDORLABS_BUILDKITE_PLUGIN`). If `endorlabs/endorlabs-buildkite-plugin` is private:
 
 1. Add a **pipeline SSH key** or org **GitHub connection** so agents can `git clone git@github.com:endorlabs/endorlabs-buildkite-plugin.git`.
-2. Or set pipeline env `ENDORLABS_BUILDKITE_PLUGIN` to a fork URL you control.
+2. Or set pipeline env `ENDORLABS_BUILDKITE_PLUGIN_SPEC` to a full `repo#ref` string (one variable — do not split with `}#${` in YAML; Buildkite interpolation rejects it).
 3. De-risk first: run the plugin repo’s **validation-smoke** pipeline (uses `$BUILDKITE_REPO#$BUILDKITE_COMMIT` — no separate plugin clone).
 
 ## Helper script

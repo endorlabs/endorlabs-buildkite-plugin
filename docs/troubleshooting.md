@@ -41,8 +41,11 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
 - **Finding count missing on the annotation** — install `jq` on the agent if you use
   `output_file` / JSON capture; without `jq`, status text still appears but counts may be omitted.
 - **Plugin checkout uses the wrong ref** — do not use `BUILDKITE_BRANCH` of the
-  application repo as the plugin git ref. Use a dedicated env var (for example
-  `ENDORLABS_BUILDKITE_PLUGIN_REF=main`) or a `file://` path on the agent.
+  application repo as the plugin git ref. Use one env var for the full spec (for example
+  `ENDORLABS_BUILDKITE_PLUGIN_SPEC=git@github.com:endorlabs/endorlabs-buildkite-plugin.git#main`).
+  Do not write `"${PLUGIN}#${REF}"` in pipeline YAML — Buildkite interpolation fails on `}#${`.
+- **`pipeline upload` failed: Expected identifier… got #** — combine plugin repo and ref
+  into a single variable, or use `./` when the plugin is the checked-out repository.
 
 ## Policy exits, soft fail, and fail_on_policy
 
