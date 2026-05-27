@@ -47,6 +47,7 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
 - **`pipeline upload` failed: Expected identifier… got #** — combine plugin repo and ref
   into a single variable, use `./` when the plugin is the checked-out repository, or escape
   a literal `#` in pipeline env defaults as `##` ([Buildkite docs](https://buildkite.com/docs/pipelines/configure/definitions#encode-unsafe-characters)).
+  Also avoid `${#array[@]}` and `echo "# comment"` in step `command` blocks — use `##` or rewrite without `#`.
 
 ## Policy exits, soft fail, and fail_on_policy
 
