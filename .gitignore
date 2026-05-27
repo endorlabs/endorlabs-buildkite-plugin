@@ -24,3 +24,6 @@ desktop.ini
 
 # Maintainer-only local artifacts (logs, scan JSON, paths.env, rendered matrix)
 .local/
+.validation-logs/
+endor-output.json
+endor-bk-*.json

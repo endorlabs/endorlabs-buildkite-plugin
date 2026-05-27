@@ -1,0 +1,36 @@
+# Hosted-friendly plugin smoke: clone public juice-shop at a pinned commit and scan
+# with the plugin from this checkout ($BUILDKITE_REPO#$BUILDKITE_COMMIT).
+#
+# Create a Buildkite pipeline on endorlabs-buildkite-plugin pointing at this file.
+# Requires on the agent/job: ENDOR_NAMESPACE, ENDOR_API_CREDENTIALS_KEY,
+# ENDOR_API_CREDENTIALS_SECRET (Buildkite secrets; see docs/maintainers/buildkite-hosted-setup.md).
+
+env:
+  ENDOR_NAMESPACE: "${ENDOR_NAMESPACE}"
+  JUICE_SHOP_REF: "f356a09207c7a9550eb6fc4c3945e081922cf998"
+  JUICE_SHOP_DIR: "${BUILDKITE_BUILD_CHECKOUT_PATH}/.validation/juice-shop"
+
+steps:
+  - label: ":javascript: Juice-shop smoke (hosted)"
+    key: val-juice-hosted
+    command: |
+      set -euo pipefail
+      rm -rf "${JUICE_SHOP_DIR}"
+      mkdir -p "$(dirname "${JUICE_SHOP_DIR}")" "${BUILDKITE_BUILD_CHECKOUT_PATH}/.local/scans"
+      git clone --depth 1 --branch v20.0.0 https://github.com/juice-shop/juice-shop.git "${JUICE_SHOP_DIR}"
+      git -C "${JUICE_SHOP_DIR}" checkout "${JUICE_SHOP_REF}"
+      echo "juice-shop at $(git -C "${JUICE_SHOP_DIR}" rev-parse HEAD)"
+    plugins:
+      - "${BUILDKITE_PULL_REQUEST_REPO:-$BUILDKITE_REPO}#${BUILDKITE_COMMIT}":
+          namespace: "${ENDOR_NAMESPACE}"
+          api_key_env: ENDOR_API_CREDENTIALS_KEY
+          api_secret_env: ENDOR_API_CREDENTIALS_SECRET
+          scan_dependencies: true
+          scan_tools: true
+          scan_path: "${JUICE_SHOP_DIR}"
+          annotate: true
+          annotate_context: endorlabs-juice-smoke
+          fail_on_policy: false
+          output_file: "${BUILDKITE_BUILD_CHECKOUT_PATH}/.local/scans/endor-juice-smoke.json"
+          tags: "validation=juice-hosted,repo=juice-shop"
+          additional_args: "--bypass-host-check"

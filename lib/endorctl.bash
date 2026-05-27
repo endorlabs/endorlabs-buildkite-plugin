@@ -74,6 +74,7 @@ function configure_endorctl() {
   ENDOR_PLUGIN_ENABLE_AZURE_MANAGED_IDENTITY="$(plugin_read_config ENABLE_AZURE_MANAGED_IDENTITY "false")"
   ENDOR_PLUGIN_GCP_SERVICE_ACCOUNT="$(plugin_read_config GCP_SERVICE_ACCOUNT)"
   ENDOR_PLUGIN_ANNOTATE="$(plugin_read_config ANNOTATE "false")"
+  ENDOR_PLUGIN_ANNOTATE_CONTEXT="$(plugin_read_config ANNOTATE_CONTEXT)"
   ENDOR_PLUGIN_PR="$(plugin_read_config PR)"
   ENDOR_PLUGIN_PR_BASELINE="$(plugin_read_config PR_BASELINE)"
   ENDOR_PLUGIN_PR_INCREMENTAL="$(plugin_read_config PR_INCREMENTAL "false")"
@@ -714,16 +715,29 @@ function annotate_scan() {
   fi
 
   local mode_label="scan"
-  local annotate_context="endorlabs-scan"
-  if [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
+  local annotate_context="${ENDOR_PLUGIN_ANNOTATE_CONTEXT:-}"
+  if [[ -z "$annotate_context" ]]; then
+    annotate_context="endorlabs-scan"
+    if [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
+      mode_label="artifact sign"
+      annotate_context="endorlabs-sign"
+    elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "verify" ]]; then
+      mode_label="artifact verify"
+      annotate_context="endorlabs-verify"
+    elif [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
+      mode_label="container scan"
+      annotate_context="endorlabs-container"
+    fi
+  elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
     mode_label="artifact sign"
-    annotate_context="endorlabs-sign"
   elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "verify" ]]; then
     mode_label="artifact verify"
-    annotate_context="endorlabs-verify"
   elif [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
     mode_label="container scan"
-    annotate_context="endorlabs-container"
+  fi
+
+  if [[ -n "${ENDOR_PLUGIN_TAGS:-}" ]]; then
+    details_html="${details_html}<p><strong>Tags:</strong> $(_escape_html "$ENDOR_PLUGIN_TAGS")</p>"
   fi
 
   local annotation="<h3>Endor Labs ${mode_label}</h3><p>${escaped_message}</p>${details_html}"

@@ -476,6 +476,21 @@ teardown() {
   assert_output --partial "annotation sent"
 }
 
+@test "annotate_context overrides default scan context" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE_CONTEXT=endorlabs-bk-filesystem
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":2}}}'"
+  stub buildkite-agent \
+    "annotate * --style success --context endorlabs-bk-filesystem : echo 'annotation sent'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "annotation sent"
+}
+
 @test "api, scan_path, tags, sarif_file and exit_on_policy_warning all surface as flags" {
   export BUILDKITE_PLUGIN_ENDORLABS_API=https://staging.api.endorlabs.com
   export BUILDKITE_PLUGIN_ENDORLABS_SCAN_PATH=services/api

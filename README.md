@@ -97,6 +97,7 @@ means typos are rejected by the Buildkite plugin-linter at PR time.
 | `tags` | no | — | `--tags=` | Scan tags |
 | `exit_on_policy_warning` | no | `false` | `--exit-on-policy-warning` | Treat policy warnings as failures |
 | `annotate` | no | `false` | Buildkite `annotate` | Publish a sanitized Buildkite annotation after scan |
+| `annotate_context` | no | (by mode) | `buildkite-agent annotate --context` | Unique per step when one build runs multiple scans; default `endorlabs-scan` (or container/sign/verify) |
 | `soft_fail` | no | `false` | plugin behavior | Return success even when endorctl exits non-zero |
 | `fail_on_policy` | no | `true` | plugin behavior | When false, convert policy exit `128` to success |
 | `upload_artifacts` | no | `false` | Buildkite `artifact upload` | Upload `output_file` and/or `sarif_file` after command |
@@ -160,11 +161,12 @@ When `annotate: true`, the plugin calls `buildkite-agent annotate` after
 `endorctl` finishes. It only publishes sanitized high-level status (and finding
 count when JSON shape allows parsing), never secrets or raw credential values.
 
-**Annotation `--context`** (Buildkite upsert key) depends on mode so different
-modes do not overwrite each other on the same job:
+**Annotation `--context`** (Buildkite upsert key) defaults by mode so different
+modes do not overwrite each other on the same build. For multiple scan steps in
+one build (layered comparisons), set `annotate_context` on each step.
 
-| Mode | `buildkite-agent annotate --context` |
-|------|--------------------------------------|
+| Mode | Default `annotate --context` |
+|------|------------------------------|
 | `mode: scan` (repository) | `endorlabs-scan` |
 | `mode: scan` with `scan_container: true` | `endorlabs-container` |
 | `mode: sign` | `endorlabs-sign` |
@@ -242,6 +244,27 @@ the plugin from a downstream step (see [ROADMAP.md](ROADMAP.md)).
 `output_file`, `sarif_file`, and uploaded artifacts may contain sensitive findings.
 The plugin does not log API keys or SCM tokens. See [SECURITY.md](SECURITY.md) and
 [docs/troubleshooting.md](docs/troubleshooting.md).
+
+## Hosted quickstart (Buildkite Elastic)
+
+1. In Buildkite, set **environment variable** `ENDOR_NAMESPACE` and **secrets**
+   `ENDOR_API_CREDENTIALS_KEY` / `ENDOR_API_CREDENTIALS_SECRET` (see
+   [docs/maintainers/buildkite-hosted-setup.md](docs/maintainers/buildkite-hosted-setup.md)).
+2. Point your pipeline at this plugin by git ref (private repos need an SSH key on the pipeline):
+
+```yaml
+steps:
+  - command: "make build"
+    plugins:
+      - git@github.com:endorlabs/endorlabs-buildkite-plugin.git#main:
+          namespace: "${ENDOR_NAMESPACE}"
+          api_key_env: ENDOR_API_CREDENTIALS_KEY
+          api_secret_env: ENDOR_API_CREDENTIALS_SECRET
+          annotate: true
+```
+
+Layered Bazel comparison: [repro-sandbox](https://github.com/endorlabs/repro-sandbox) `.buildkite/pipeline.yml`.
+Plugin smoke on hosted agents: `.buildkite/pipeline.validation-smoke.yml` in this repository.
 
 ## Developing
 

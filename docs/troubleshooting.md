@@ -31,6 +31,19 @@ There is no first-class Buildkite OIDC flow in this plugin for SCM commenting.
 Provide a suitable PAT or bot token on the agent (for example via the
 Buildkite secrets plugin) and reference it with `scm_token_env`.
 
+## Buildkite annotations (layered / multi-step builds)
+
+- **`annotate: true` has no effect locally** — `buildkite-agent annotate` needs a real
+  Buildkite job and agent session token. Local Docker smoke logs a warning and continues.
+- **Only the last step’s annotation appears** when several steps use `annotate: true`
+  with the default context (`endorlabs-scan`). Set a unique `annotate_context` per step
+  (for example `endorlabs-bk-filesystem`, `endorlabs-bk-bazel`).
+- **Finding count missing on the annotation** — install `jq` on the agent if you use
+  `output_file` / JSON capture; without `jq`, status text still appears but counts may be omitted.
+- **Plugin checkout uses the wrong ref** — do not use `BUILDKITE_BRANCH` of the
+  application repo as the plugin git ref. Use a dedicated env var (for example
+  `ENDORLABS_BUILDKITE_PLUGIN_REF=main`) or a `file://` path on the agent.
+
 ## Policy exits, soft fail, and fail_on_policy
 
 - **`soft_fail: true`** — the plugin exits 0 even when endorctl returns

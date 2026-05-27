@@ -5,7 +5,7 @@
 # secrets into this file.
 #
 # Prerequisites on agents: bash, curl, docker (for container image_tar step),
-# git checkouts at the substituted paths, ENDOR_API_KEY + ENDOR_API_SECRET in
+# git checkouts at the substituted paths, ENDOR_API_CREDENTIALS_KEY + ENDOR_API_CREDENTIALS_SECRET in
 # the job environment (Buildkite secrets / env hooks).
 
 steps:
@@ -20,8 +20,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_secrets: false
               scan_sast: false
@@ -39,8 +39,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: false
               scan_secrets: true
               scan_sast: true
@@ -58,8 +58,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: false
               scan_secrets: false
               scan_sast: true
@@ -80,8 +80,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_tools: true
               scan_path: .
@@ -98,8 +98,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_github_actions: true
               scan_path: .
@@ -116,8 +116,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               pr_baseline: main
               pr_incremental: false
@@ -137,8 +137,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_path: src/mongo
               annotate: true
@@ -154,8 +154,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_path: .
               additional_args: "--log-level=warn"
@@ -171,8 +171,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_path: .
               annotate: true
@@ -190,8 +190,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_path: .
               annotate: true
@@ -207,8 +207,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_sast: true
               exit_on_policy_warning: true
@@ -226,8 +226,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_path: starter/spring-boot-starter
               output_file: endor-val-spring-out.json
@@ -249,8 +249,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_tools: true
               scan_path: .
@@ -267,8 +267,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_ai_models: true
               scan_path: .
@@ -285,8 +285,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_path: .
               soft_fail: true
@@ -306,8 +306,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: false
               scan_container: true
               image: alpine:3.19
@@ -329,8 +329,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: false
               scan_container: true
               image_tar: /tmp/validation-alpine-319.tar
@@ -352,8 +352,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: sign
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: false
               artifact_name: "ghcr.io/example/validation-demo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
               source_repository_ref: refs/heads/main
@@ -370,8 +370,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: verify
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: false
               artifact_name: "ghcr.io/example/validation-demo@sha256:0000000000000000000000000000000000000000000000000000000000000000"
               certificate_oidc_issuer: https://token.actions.githubusercontent.com
@@ -390,8 +390,8 @@ steps:
           - "__ENDORLABS_BUILDKITE_PLUGIN_REF__":
               mode: scan
               namespace: "__ENDOR_NAMESPACE__"
-              api_key_env: ENDOR_API_KEY
-              api_secret_env: ENDOR_API_SECRET
+              api_key_env: ENDOR_API_CREDENTIALS_KEY
+              api_secret_env: ENDOR_API_CREDENTIALS_SECRET
               scan_dependencies: true
               scan_path: .
               fail_on_policy: false

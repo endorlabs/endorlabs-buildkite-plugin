@@ -129,6 +129,13 @@ configuration:
       type: boolean
     annotate:
       type: boolean
+    annotate_context:
+      type: string
+      description: >-
+        Optional buildkite-agent annotate --context. Use a unique value per step
+        when one build runs multiple plugin invocations (layered scans). When
+        omitted, context is derived from mode (endorlabs-scan, endorlabs-container,
+        endorlabs-sign, endorlabs-verify).
     soft_fail:
       type: boolean
       default: false
