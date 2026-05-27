@@ -28,6 +28,18 @@ Hosted agents clone the plugin by git ref (`ENDORLABS_BUILDKITE_PLUGIN`). If `en
 2. Or set pipeline env `ENDORLABS_BUILDKITE_PLUGIN_SPEC` to a full `repo#ref` string (one variable — do not split with `}#${` in YAML; Buildkite interpolation rejects it).
 3. De-risk first: run the plugin repo’s **validation-smoke** pipeline (uses `$BUILDKITE_REPO#$BUILDKITE_COMMIT` — no separate plugin clone).
 
+## Secrets (Buildkite UI — required)
+
+The REST API cannot set pipeline secrets on all plans. In Buildkite:
+
+1. Open **Pipeline → Settings → Secrets** (or **Teams → Secrets** for cluster-scoped secrets).
+2. Create secrets that are exposed to the job environment as:
+   - `ENDOR_API_CREDENTIALS_KEY` (value = API key from `.env`)
+   - `ENDOR_API_CREDENTIALS_SECRET` (value = API secret from `.env`)
+3. Ensure `ENDOR_NAMESPACE` is set (pipeline env — applied via API below or UI).
+
+Unset `ENDOR_TOKEN` on agent hooks if present.
+
 ## Helper script
 
 From the plugin repo root (Git Bash / WSL / Linux):
