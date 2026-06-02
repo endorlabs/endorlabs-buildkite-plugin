@@ -19,9 +19,7 @@ policy that limits access to your pipeline (for example `pipeline_slug: my-app`)
 Reference them in pipeline YAML (Buildkite agent **3.106.0+**):
 
 ```yaml
-env:
-  ENDOR_NAMESPACE: "${ENDOR_NAMESPACE}"
-
+# Do not list ENDOR_NAMESPACE under env: if it is a cluster secret — Buildkite rejects duplicates.
 secrets:
   - ENDOR_NAMESPACE
   - ENDOR_API_CREDENTIALS_KEY
