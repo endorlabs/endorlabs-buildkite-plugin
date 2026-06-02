@@ -9,7 +9,7 @@ Configure Endor Labs scans on [Buildkite](https://buildkite.com) with API keys
 
 | Variable | How to set it |
 |----------|----------------|
-| `ENDOR_NAMESPACE` | Pipeline or team **environment variable** (not secret) |
+| `ENDOR_NAMESPACE` | **Pipeline environment variable** (Buildkite → Pipeline → Settings → Environment variables). Not a cluster secret. |
 | `ENDOR_API_CREDENTIALS_KEY` | **Buildkite cluster secret** → exposed to jobs with that name |
 | `ENDOR_API_CREDENTIALS_SECRET` | **Buildkite cluster secret** → exposed to jobs with that name |
 
@@ -31,6 +31,8 @@ steps:
     command: |
       test -n "${ENDOR_API_CREDENTIALS_KEY}" \
         && test -n "${ENDOR_API_CREDENTIALS_SECRET}"
+  - label: ":endorlabs: Require Endor namespace"
+    command: test -n "${ENDOR_NAMESPACE}"
   - label: ":hammer: Build and scan"
     command: "make build"
     plugins:
