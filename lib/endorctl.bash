@@ -90,6 +90,13 @@ function configure_endorctl() {
   ENDOR_PLUGIN_UPLOAD_ARTIFACTS="$(plugin_read_config UPLOAD_ARTIFACTS "false")"
   ENDOR_PLUGIN_ARTIFACT_PATHS="$(plugin_read_config ARTIFACT_PATHS)"
 
+  # When consumers set output paths, upload to Buildkite job artifacts unless explicitly disabled.
+  if ! plugin_config_exists UPLOAD_ARTIFACTS; then
+    if [[ -n "$ENDOR_PLUGIN_OUTPUT_FILE" || -n "$ENDOR_PLUGIN_SARIF_FILE" ]]; then
+      ENDOR_PLUGIN_UPLOAD_ARTIFACTS="true"
+    fi
+  fi
+
   if [[ -z "$ENDOR_PLUGIN_NAMESPACE" ]]; then
     log_fatal "endorlabs plugin: 'namespace' is required"
   fi
@@ -342,10 +349,19 @@ function _append_additional_args() {
   fi
 }
 
+function _ensure_output_parent_dir() {
+  local path="$1"
+  [[ -n "$path" ]] || return 0
+  local dir
+  dir="$(dirname "$path")"
+  [[ -n "$dir" && "$dir" != "." ]] && mkdir -p "$dir"
+}
+
 function _run_endorctl_with_capture() {
   local -a args=("$@")
   ENDOR_PLUGIN_CAPTURE_FILE=""
   if [[ -n "$ENDOR_PLUGIN_OUTPUT_FILE" ]]; then
+    _ensure_output_parent_dir "$ENDOR_PLUGIN_OUTPUT_FILE"
     if [[ "$ENDOR_PLUGIN_ANNOTATE" == "true" ]]; then
       ENDOR_PLUGIN_CAPTURE_FILE="$(mktemp)"
       endorctl "${args[@]}" | tee "$ENDOR_PLUGIN_OUTPUT_FILE" "$ENDOR_PLUGIN_CAPTURE_FILE"
@@ -478,6 +494,7 @@ function run_repo_scan() {
   fi
 
   if [[ -n "$ENDOR_PLUGIN_SARIF_FILE" ]]; then
+    _ensure_output_parent_dir "$ENDOR_PLUGIN_SARIF_FILE"
     args+=("--sarif-file=${ENDOR_PLUGIN_SARIF_FILE}")
   fi
 
@@ -639,6 +656,7 @@ function upload_artifacts_if_configured() {
   local path
   for path in "${paths[@]}"; do
     if [[ -f "$path" ]]; then
+      log_focus ":endorlabs: Uploading artifact ${path}"
       buildkite-agent artifact upload "$path"
     else
       log_warn "endorlabs plugin: artifact path not found, skipping upload: $path"
@@ -710,7 +728,11 @@ function annotate_scan() {
   esac
 
   local findings_count=""
-  findings_count="$(_read_scan_finding_count "$ENDOR_PLUGIN_CAPTURE_FILE")"
+  if [[ -n "${ENDOR_PLUGIN_CAPTURE_FILE:-}" && -f "${ENDOR_PLUGIN_CAPTURE_FILE}" ]]; then
+    findings_count="$(_read_scan_finding_count "$ENDOR_PLUGIN_CAPTURE_FILE")"
+  elif [[ -n "${ENDOR_PLUGIN_OUTPUT_FILE:-}" ]]; then
+    findings_count="$(_read_scan_finding_count "$ENDOR_PLUGIN_OUTPUT_FILE")"
+  fi
 
   local escaped_message
   escaped_message="$(_escape_html "$message")"
@@ -746,7 +768,8 @@ function annotate_scan() {
   fi
 
   local annotation="<h3>Endor Labs ${mode_label}</h3><p>${escaped_message}</p>${details_html}"
-  if ! buildkite-agent annotate "$annotation" --style "$style" --context "$annotate_context" 2>/dev/null; then
+  log_focus ":endorlabs: Publishing Buildkite annotation (context=${annotate_context})"
+  if ! buildkite-agent annotate "$annotation" --style "$style" --context "$annotate_context"; then
     log_warn "endorlabs plugin: buildkite-agent annotate failed (missing agent token or not in a Buildkite job?); continuing"
   fi
 

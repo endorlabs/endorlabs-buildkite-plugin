@@ -95,7 +95,45 @@ annotate_context: endorlabs-filesystem
 Use `fail_on_policy: false` only on informational or comparison jobs; keep
 `fail_on_policy: true` (default) on merge gates.
 
-## 4. Bazel + Buildkite YAML
+## 4. Annotations and job artifacts
+
+### Annotations (`annotate: true`)
+
+After the scan, the plugin runs `buildkite-agent annotate` with `annotate_context`
+(unique per step). In the Buildkite UI, open the **scan step** → **Annotations**
+(context matches your `annotate_context`, e.g. `endorlabs-bk-filesystem`).
+
+Vendored plugin paths (`./.buildkite/vendor/endorlabs-buildkite-plugin`) use a
+longer Buildkite env prefix (`BUILDKITE_PLUGIN_ENDORLABS_BUILDKITE_PLUGIN_*`);
+the plugin resolves that automatically.
+
+### JSON / SARIF files and artifacts
+
+| Option | Purpose |
+|--------|---------|
+| `output_file` | Tee endorctl JSON summary to this path |
+| `sarif_file` | Pass `--sarif-file=` to endorctl |
+| `upload_artifacts` | `buildkite-agent artifact upload` for those paths |
+
+**Recommended path** (gitignored, one directory per repo):
+
+```yaml
+output_file: ".local/scans/endor-scan.json"
+sarif_file: ".local/scans/endor-scan.sarif"
+upload_artifacts: true
+```
+
+If `output_file` or `sarif_file` is set and `upload_artifacts` is omitted, the
+plugin defaults `upload_artifacts` to **true** so files appear under the job
+**Artifacts** tab in Buildkite. Set `upload_artifacts: false` to keep outputs
+on the agent only.
+
+Create the directory in your step command if needed: `mkdir -p .local/scans`.
+
+Treat artifacts as sensitive (findings, paths); restrict retention and download
+access in Buildkite.
+
+## 5. Bazel + Buildkite YAML
 
 Keep `#` and shell `${array[@]}` out of `pipeline.yml` — put Bazel query/build in
 a script (see repro-sandbox `scripts/buildkite-bazel-prebuild.sh`).
@@ -104,7 +142,7 @@ Ensure Java targets declare strict deps (for example Log4j `log4j-api` alongside
 `log4j-core`). A failed `command` can still run the plugin `post-command`, but
 `endorctl` Bazel/git scans are more reliable when the prebuild succeeds.
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 See [troubleshooting.md](troubleshooting.md) for policy exits (`128` / `129`),
 plugin checkout, and annotation behaviour.

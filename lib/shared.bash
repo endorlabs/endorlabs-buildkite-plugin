@@ -3,22 +3,46 @@
 # Shared helpers for the Endor Labs Buildkite plugin.
 #
 # Patterns mirror buildkite-plugins/docker-compose-buildkite-plugin:
-# - plugin_read_config: read BUILDKITE_PLUGIN_ENDORLABS_<KEY> with optional default
+# - plugin_read_config: read BUILDKITE_PLUGIN_<ID>_<KEY> with optional default
 # - plugin_read_list / prefix_read_list: handle YAML array → KEY_0, KEY_1, ...
 # - log_group / log_subgroup: Buildkite collapsible group markers (--- / +++)
+
+PLUGIN_ENV_PREFIX=""
+
+# Resolve BUILDKITE_PLUGIN_* prefix from the agent (endorlabs vs endorlabs-buildkite-plugin path).
+function plugin_env_prefix() {
+  if [[ -n "$PLUGIN_ENV_PREFIX" ]]; then
+    echo "$PLUGIN_ENV_PREFIX"
+    return 0
+  fi
+  local name
+  while IFS= read -r name; do
+    if [[ "$name" =~ ^BUILDKITE_PLUGIN_(.+)_NAMESPACE$ ]]; then
+      PLUGIN_ENV_PREFIX="BUILDKITE_PLUGIN_${BASH_REMATCH[1]}"
+      echo "$PLUGIN_ENV_PREFIX"
+      return 0
+    fi
+  done < <(compgen -e | grep '^BUILDKITE_PLUGIN_.*_NAMESPACE$' || true)
+  PLUGIN_ENV_PREFIX="BUILDKITE_PLUGIN_ENDORLABS"
+  echo "$PLUGIN_ENV_PREFIX"
+}
 
 # Read a single plugin config value by KEY (uppercase, underscored).
 # Usage: plugin_read_config NAMESPACE
 #        plugin_read_config SCAN_PATH "."
 function plugin_read_config() {
-  local var="BUILDKITE_PLUGIN_ENDORLABS_${1}"
+  local prefix
+  prefix="$(plugin_env_prefix)"
+  local var="${prefix}_${1}"
   local default="${2:-}"
   echo "${!var:-$default}"
 }
 
 # Return success if a plugin config key is set (even to empty string).
 function plugin_config_exists() {
-  local var="BUILDKITE_PLUGIN_ENDORLABS_${1}"
+  local prefix
+  prefix="$(plugin_env_prefix)"
+  local var="${prefix}_${1}"
   [ "${!var+is_set}" != "" ]
 }
 
@@ -43,7 +67,9 @@ function prefix_read_list() {
 
 # Read a list from plugin config by KEY.
 function plugin_read_list() {
-  prefix_read_list "BUILDKITE_PLUGIN_ENDORLABS_$1"
+  local prefix
+  prefix="$(plugin_env_prefix)"
+  prefix_read_list "${prefix}_$1"
 }
 
 # Buildkite log group markers.
