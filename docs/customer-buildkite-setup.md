@@ -27,6 +27,11 @@ secrets:
   - ENDOR_API_CREDENTIALS_SECRET
 
 steps:
+  - label: ":endorlabs: Require Endor environment"
+    command: |
+      test -n "${ENDOR_NAMESPACE}" \
+        && test -n "${ENDOR_API_CREDENTIALS_KEY}" \
+        && test -n "${ENDOR_API_CREDENTIALS_SECRET}"
   - label: ":hammer: Build and scan"
     command: "make build"
     plugins:
