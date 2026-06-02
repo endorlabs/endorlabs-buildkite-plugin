@@ -109,11 +109,25 @@ teardown() {
 
 @test "fails when namespace is missing" {
   unset BUILDKITE_PLUGIN_ENDORLABS_NAMESPACE
+  unset ENDOR_NAMESPACE
 
   run "$PWD"/hooks/post-command
 
   assert_failure
   assert_output --partial "'namespace' is required"
+}
+
+@test "namespace falls back to ENDOR_NAMESPACE env when plugin namespace unset" {
+  unset BUILDKITE_PLUGIN_ENDORLABS_NAMESPACE
+  export ENDOR_NAMESPACE=from-cluster-secret
+
+  stub endorctl \
+    "scan --namespace=from-cluster-secret --output-type=json --log-level=info --verbose=false --dependencies=true : echo 'ran scan'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "ran scan"
 }
 
 @test "fails when endorctl_version is pinned without checksum" {

@@ -22,6 +22,11 @@ ENDORCTL_DEFAULT_API="https://api.endorlabs.com"
 function configure_endorctl() {
   ENDOR_PLUGIN_MODE="$(plugin_read_config MODE "scan")"
   ENDOR_PLUGIN_NAMESPACE="$(plugin_read_config NAMESPACE)"
+  # Buildkite may interpolate namespace: "${ENDOR_NAMESPACE}" before cluster secrets
+  # apply; fall back to the job env var (secrets: or pipeline env).
+  if [[ -z "$ENDOR_PLUGIN_NAMESPACE" ]]; then
+    ENDOR_PLUGIN_NAMESPACE="${ENDOR_NAMESPACE:-}"
+  fi
   ENDOR_PLUGIN_API="$(plugin_read_config API)"
   ENDOR_PLUGIN_SCAN_PATH="$(plugin_read_config SCAN_PATH)"
   ENDOR_PLUGIN_SCAN_DEPENDENCIES="$(plugin_read_config SCAN_DEPENDENCIES "true")"
