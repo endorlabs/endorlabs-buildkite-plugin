@@ -26,14 +26,14 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
 ```
 
-Set `ENDOR_API_KEY` and `ENDOR_API_SECRET` on the agent — for example
-via the `secrets#v2.1.0` plugin or your agent's secret manager. The
-plugin reads them by name (the `*_env` indirection), so the secrets
-themselves never appear in your pipeline YAML.
+Expose `ENDOR_API_CREDENTIALS_KEY` and `ENDOR_API_CREDENTIALS_SECRET` on the
+agent (Buildkite cluster secrets, the `secrets:` pipeline block, or your secret
+manager). The plugin reads them by the names you set in `api_key_env` /
+`api_secret_env`; values never belong in pipeline YAML.
 
 ## Configuration
 
@@ -247,24 +247,32 @@ The plugin does not log API keys or SCM tokens. See [SECURITY.md](SECURITY.md) a
 
 ## Hosted quickstart (Buildkite Elastic)
 
-1. In Buildkite, set **environment variable** `ENDOR_NAMESPACE` and **secrets**
-   `ENDOR_API_CREDENTIALS_KEY` / `ENDOR_API_CREDENTIALS_SECRET` (see
-   [docs/maintainers/buildkite-hosted-setup.md](docs/maintainers/buildkite-hosted-setup.md)).
-2. Point your pipeline at this plugin by git ref (private repos need an SSH key on the pipeline):
+1. Set `ENDOR_NAMESPACE` and cluster secrets `ENDOR_API_CREDENTIALS_KEY` /
+   `ENDOR_API_CREDENTIALS_SECRET`, and add a `secrets:` block in your pipeline
+   YAML — see [docs/customer-buildkite-setup.md](docs/customer-buildkite-setup.md).
+2. Prefer a **vendored** plugin path (`./.buildkite/vendor/endorlabs-buildkite-plugin:`)
+   when the plugin repo is in another org; use a git URL only if agents can clone it.
 
 ```yaml
+env:
+  ENDOR_NAMESPACE: "${ENDOR_NAMESPACE}"
+
+secrets:
+  - ENDOR_API_CREDENTIALS_KEY
+  - ENDOR_API_CREDENTIALS_SECRET
+
 steps:
   - command: "make build"
     plugins:
-      - https://github.com/endorlabs/endorlabs-buildkite-plugin.git#main:
+      - endorlabs#v0.1.0:
           namespace: "${ENDOR_NAMESPACE}"
           api_key_env: ENDOR_API_CREDENTIALS_KEY
           api_secret_env: ENDOR_API_CREDENTIALS_SECRET
           annotate: true
 ```
 
-Layered Bazel comparison: [repro-sandbox](https://github.com/endorlabs/repro-sandbox) `.buildkite/pipeline.yml`.
-Plugin smoke on hosted agents: `.buildkite/pipeline.validation-smoke.yml` in this repository.
+Reference integration: [repro-sandbox](https://github.com/endorlabs/repro-sandbox)
+`.buildkite/pipeline.yml` (layered filesystem + Bazel scans).
 
 ## Developing
 

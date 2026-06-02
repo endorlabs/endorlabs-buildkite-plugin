@@ -31,6 +31,16 @@ There is no first-class Buildkite OIDC flow in this plugin for SCM commenting.
 Provide a suitable PAT or bot token on the agent (for example via the
 Buildkite secrets plugin) and reference it with `scm_token_env`.
 
+## Buildkite: vendored vs remote plugin
+
+- **Remote plugin fails with `Authentication failed` for `endorlabs-buildkite-plugin.git`**
+  — the job’s GitHub credentials can read your app repo but not the plugin org.
+  Use a **vendored** copy under `.buildkite/vendor/endorlabs-buildkite-plugin/`, or
+  install the Buildkite GitHub App on the plugin’s org with read access to that repo.
+- **Build failed but you expected only scan results** — `post-command` runs after your
+  `command`. If Bazel/make fails, the step is red even when the plugin runs. Fix the
+  build, or split scan into a separate step that depends on a successful build.
+
 ## Buildkite annotations (layered / multi-step builds)
 
 - **`annotate: true` has no effect locally** — `buildkite-agent annotate` needs a real

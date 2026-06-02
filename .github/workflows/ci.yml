@@ -17,13 +17,24 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Run shellcheck
-        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
-        with:
-          scandir: |
-            ./hooks
-            ./lib
-          additional_files: |
-            scripts/validation/render-matrix.sh
+        env:
+          SHELLCHECK_VERSION: v0.11.0
+          SHELLCHECK_TAR_XZ_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+        run: |
+          set -euo pipefail
+          asset="shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          url="https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/${asset}"
+
+          curl -fsSL "${url}" -o "${asset}"
+          echo "${SHELLCHECK_TAR_XZ_SHA256}  ${asset}" | sha256sum -c -
+          tar -xJf "${asset}"
+
+          shellcheck_bin="./shellcheck-${SHELLCHECK_VERSION}/shellcheck"
+          "${shellcheck_bin}" --version
+          "${shellcheck_bin}" \
+            hooks/* \
+            lib/* \
+            scripts/validation/render-matrix.sh \
             contrib/local-smoke/local-smoke.sh
 
   plugin-linter:

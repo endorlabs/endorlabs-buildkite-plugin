@@ -2,6 +2,8 @@
 
 One-time configuration so hosted Elastic agents can run real `endorctl` scans. Values come from your local `.env`; **never commit** `.env` or secret values.
 
+Customer-facing setup (secrets, vendoring, plugin URL): [../customer-buildkite-setup.md](../customer-buildkite-setup.md).
+
 ## Map `.env` to Buildkite
 
 | Local `.env` | Buildkite |

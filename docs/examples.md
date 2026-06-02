@@ -16,14 +16,36 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
 ```
 
 The plugin requires API credentials to be present on the agent under
-the env-var names you pass in `api_key_env` / `api_secret_env`. Use the
-Buildkite `secrets` plugin (or your agent's secret manager) to populate
-those variables — never commit them to your pipeline file.
+the env-var names you pass in `api_key_env` / `api_secret_env`. On
+Buildkite, use cluster secrets and a pipeline `secrets:` block — see
+[customer-buildkite-setup.md](customer-buildkite-setup.md). Never commit
+credential values to your pipeline file.
+
+## Buildkite: cluster secrets + vendored plugin
+
+```yaml
+env:
+  ENDOR_NAMESPACE: "${ENDOR_NAMESPACE}"
+
+secrets:
+  - ENDOR_API_CREDENTIALS_KEY
+  - ENDOR_API_CREDENTIALS_SECRET
+
+steps:
+  - command: "make build"
+    plugins:
+      - ./.buildkite/vendor/endorlabs-buildkite-plugin:
+          namespace: "${ENDOR_NAMESPACE}"
+          api_key_env: ENDOR_API_CREDENTIALS_KEY
+          api_secret_env: ENDOR_API_CREDENTIALS_SECRET
+          scan_dependencies: true
+          annotate: true
+```
 
 ## Pin endorctl version
 
@@ -36,8 +58,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           endorctl_version: "1.2.3"
           endorctl_checksum: "<sha256-of-the-binary-for-your-platform>"
 ```
@@ -53,8 +75,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           endorctl_skip_install: true
 ```
 
@@ -102,8 +124,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           scan_path: "services/api"
           sarif_file: "endor.sarif"
           output_type: "json"
@@ -119,8 +141,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           scan_dependencies: true
           scan_secrets: true
           scan_sast: true
@@ -139,8 +161,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           scan_dependencies: true
           use_bazel: true
           bazel_include_targets: "//..."
@@ -162,8 +184,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
 ```
 
 ## Explicit PR baseline
@@ -177,8 +199,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           pr_baseline: "release/2.x"
 ```
 
@@ -196,8 +218,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           pr_incremental: true
 ```
 
@@ -219,8 +241,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           enable_pr_comments: true
           scm_token_env: "ENDOR_SCM_TOKEN"
 ```
@@ -236,8 +258,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           additional_args: "--phantom-dependencies=true --tools=true"
 ```
 
@@ -251,8 +273,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           annotate: true
 ```
 
@@ -268,8 +290,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           scan_dependencies: false
           scan_container: true
           image: "ghcr.io/acme/demo:${BUILDKITE_COMMIT}"
@@ -288,8 +310,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           scan_dependencies: false
           scan_container: true
           image_tar: "/tmp/base-latest.tar"
@@ -307,8 +329,8 @@ steps:
       - endorlabs#v0.1.0:
           mode: "sign"
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           artifact_name: "ghcr.io/acme/demo@sha256:${IMAGE_DIGEST}"
           source_repository_ref: "refs/heads/main"
           certificate_oidc_issuer: "https://token.actions.githubusercontent.com"
@@ -325,8 +347,8 @@ steps:
       - endorlabs#v0.1.0:
           mode: "verify"
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           artifact_name: "ghcr.io/acme/demo@sha256:${IMAGE_DIGEST}"
           certificate_oidc_issuer: "https://token.actions.githubusercontent.com"
 ```
@@ -339,8 +361,8 @@ steps:
     plugins:
       - endorlabs#v0.1.0:
           namespace: "your-namespace"
-          api_key_env: "ENDOR_API_KEY"
-          api_secret_env: "ENDOR_API_SECRET"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
           output_file: "endor-output.json"
           sarif_file: "endor.sarif"
           annotate: true
