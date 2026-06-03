@@ -512,7 +512,7 @@ teardown() {
 
   local json="${BATS_TEST_TMPDIR}/findings.json"
   cat >"${json}" <<'EOF'
-{"all_findings":[{"meta":{"description":"High vuln in pyjwt"},"spec":{"level":"FINDING_LEVEL_HIGH","target_dependency_name":"pyjwt"}}]}
+{"all_findings":[{"meta":{"description":"High vuln in pyjwt"},"spec":{"level":"FINDING_LEVEL_HIGH","target_dependency_name":"pyjwt","finding_tags":["FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY"],"location_urls":{"pyjwt":"https://example.com/pyjwt"}}}]}
 EOF
 
   run _build_findings_annotation_html "${json}" 5
@@ -520,6 +520,8 @@ EOF
   assert_success
   assert_output --partial "By severity"
   assert_output --partial "High vuln in pyjwt"
+  assert_output --partial "Potentially reachable"
+  assert_output --partial "https://example.com/pyjwt"
   assert_output --partial "<table>"
 }
 

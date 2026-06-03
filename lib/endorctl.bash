@@ -723,7 +723,6 @@ function _build_findings_annotation_html() {
   [[ "$has_findings" == "yes" ]] || return 0
 
   local severity_html=""
-  local severity_line
   while IFS=$'\t' read -r level count; do
     [[ -n "$level" && -n "$count" ]] || continue
     severity_html="${severity_html}<li>$(_escape_html "$(_level_display_name "$level")"): $(_escape_html "$count")</li>"
@@ -743,12 +742,20 @@ function _build_findings_annotation_html() {
   fi
 
   local table_rows=""
-  local row level title target
-  while IFS=$'\t' read -r level title target; do
+  local level reach title detail url loc_cell
+  while IFS=$'\t' read -r level reach title detail url; do
     [[ -n "$level" ]] || continue
-    table_rows="${table_rows}<tr><td>$(_escape_html "$(_level_display_name "$level")")</td>"
+    if [[ -n "$url" && "$url" =~ ^https?:// ]]; then
+      loc_cell="<a href=\"$(_escape_html "$url")\">$(_escape_html "$detail")</a>"
+    else
+      loc_cell="$(_escape_html "$detail")"
+    fi
+    table_rows="${table_rows}<tr>"
+    table_rows="${table_rows}<td>$(_escape_html "$reach")</td>"
+    table_rows="${table_rows}<td>$(_escape_html "$(_level_display_name "$level")")</td>"
     table_rows="${table_rows}<td>$(_escape_html "$title")</td>"
-    table_rows="${table_rows}<td>$(_escape_html "$target")</td></tr>"
+    table_rows="${table_rows}<td>${loc_cell}</td>"
+    table_rows="${table_rows}</tr>"
   done < <(jq -r --argjson limit "$limit" '
     def rank($l):
       if ($l | test("CRITICAL")) then 0
@@ -756,25 +763,43 @@ function _build_findings_annotation_html() {
       elif ($l | test("MEDIUM")) then 2
       elif ($l | test("LOW")) then 3
       else 4 end;
+    def reachability:
+      (.spec.finding_tags // []) as $tags |
+      if any($tags[]?; . == "FINDING_TAGS_REACHABLE_DEPENDENCY" or . == "FINDING_TAGS_REACHABLE_FUNCTION") then "Reachable"
+      elif any($tags[]?; . == "FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY" or . == "FINDING_TAGS_POTENTIALLY_REACHABLE_FUNCTION") then "Potentially reachable"
+      else "Not reachable"
+      end;
+    def finding_url:
+      (.spec.finding_metadata.custom.location // "") as $custom |
+      if (($custom | length) > 0) and ($custom | startswith("http")) then $custom
+      else (.spec.location_urls // {} | to_entries | .[0].value // empty)
+      end;
+    def finding_detail:
+      (.spec.finding_metadata.custom.location // "") as $loc |
+      if ($loc | startswith("http")) then
+        ($loc | split("/") | last | gsub("#L"; ":"))
+      else
+        (.spec.dependency_file_paths[0]
+         // .spec.target_dependency_name
+         // ((.spec.location_urls // {}) | keys[0])
+         // "—")
+      end;
     [.all_findings[]?
       | {
           level: (.spec.level // "FINDING_LEVEL_UNKNOWN"),
+          reach: reachability,
           title: (
             (.meta.description // .meta.name // "Finding")
             | gsub("\\s+"; " ")
-            | if length > 120 then .[0:117] + "…" else . end
+            | if length > 100 then .[0:97] + "…" else . end
           ),
-          target: (
-            .spec.target_dependency_name
-            // .spec.target_dependency_package_name
-            // (.spec.dependency_file_paths[0] // empty)
-            // (.meta.parent_kind // "—")
-          )
+          detail: finding_detail,
+          url: finding_url
         }
     ]
     | sort_by(rank(.level))
     | .[0:$limit][]
-    | [.level, .title, .target]
+    | [.level, .reach, .title, .detail, .url]
     | @tsv
   ' "$source_file" 2>/dev/null)
 
@@ -782,15 +807,14 @@ function _build_findings_annotation_html() {
     return 0
   fi
 
-  local total listed
+  local total
   total="$(jq -r '(.all_findings | length) // 0' "$source_file" 2>/dev/null)"
-  listed="$limit"
   if [[ -n "$total" && "$total" -gt "$limit" ]]; then
     echo "<p><strong>Top ${limit} of ${total} findings</strong> (full list in JSON artifact)</p>"
   else
     echo "<p><strong>Findings</strong></p>"
   fi
-  echo "<table><thead><tr><th>Severity</th><th>Description</th><th>Target</th></tr></thead><tbody>${table_rows}</tbody></table>"
+  echo "<table><thead><tr><th>Reach</th><th>Severity</th><th>Finding</th><th>Location</th></tr></thead><tbody>${table_rows}</tbody></table>"
 }
 
 function _annotate_artifact_link_html() {
