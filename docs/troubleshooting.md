@@ -60,6 +60,11 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   credentials can read your app repo but not the plugin org. **Vendor** the plugin under
   `.buildkite/vendor/endorlabs-buildkite-plugin/` instead (see
   [customer-buildkite-setup.md](customer-buildkite-setup.md)).
+- **`endorlabs#v0.1.0` clones `buildkite-plugins/endorlabs-buildkite-plugin`**
+  — Buildkite’s plugin shorthand points at the [plugin directory](https://buildkite.com/docs/pipelines/integrations/plugins/writing#step-2-add-the-plugin-to-your-pipeline)
+  mirror until your release is synced. For the **`endorlabs/endorlabs-buildkite-plugin`**
+  GitHub repo, use a single full URL:
+  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.1`
 - **Build failed but you expected only scan results** — `post-command` runs after your
   `command`. If Bazel/make fails, the step is red even when the plugin runs. Fix the
   build, or split scan into a separate step that depends on a successful build.
