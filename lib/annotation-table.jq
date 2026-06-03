@@ -51,11 +51,29 @@ def truncate_title:
   | gsub("\\s+"; " ")
   | if length > 100 then .[0:97] + "…" else . end;
 
-def reachability_label:
+def dependency_reachability_label:
   (.spec.finding_tags // []) as $tags |
-  if any($tags[]?; . == "FINDING_TAGS_REACHABLE_DEPENDENCY" or . == "FINDING_TAGS_REACHABLE_FUNCTION") then "Reachable"
-  elif any($tags[]?; . == "FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY" or . == "FINDING_TAGS_POTENTIALLY_REACHABLE_FUNCTION") then "Potentially reachable"
-  else "Not reachable"
+  if any($tags[]?; . == "FINDING_TAGS_REACHABLE_DEPENDENCY") then "Reachable Dependency"
+  elif any($tags[]?; . == "FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY") then "Potentially Reachable Dependency"
+  elif any($tags[]?; . == "FINDING_TAGS_UNREACHABLE_DEPENDENCY") then "Unreachable Dependency"
+  else "—"
+  end;
+
+def function_reachability_label:
+  (.spec.finding_tags // []) as $tags |
+  if any($tags[]?; . == "FINDING_TAGS_REACHABLE_FUNCTION") then "Reachable Function"
+  elif any($tags[]?; . == "FINDING_TAGS_POTENTIALLY_REACHABLE_FUNCTION") then "Potentially Reachable Function"
+  elif any($tags[]?; . == "FINDING_TAGS_UNREACHABLE_FUNCTION") then "Unreachable Function"
+  else ""
+  end;
+
+def sast_cwe_ids:
+  (.spec.finding_metadata.custom.cwes // []) as $cwes |
+  if ($cwes | length) == 0 then "—"
+  else
+    [$cwes[] | split(":")[0] | gsub("^\\s+|\\s+$"; "")]
+    | unique
+    | join(", ")
   end;
 
 def code_location_url:
@@ -116,7 +134,13 @@ def row_for_mode:
       end
     ),
     package: (if $table_mode == "dependencies" then deps_package_name else "" end),
-    reach: (if $table_mode == "dependencies" then reachability_label else "" end)
+    reach_dep: (if $table_mode == "dependencies" then dependency_reachability_label else "" end),
+    reach_fn: (if $table_mode == "dependencies" then function_reachability_label else "" end),
+    cwe: (
+      if $table_mode == "sast" or $table_mode == "ai-sast" then sast_cwe_ids
+      else ""
+      end
+    )
   };
 
 def is_critical_or_high($level):

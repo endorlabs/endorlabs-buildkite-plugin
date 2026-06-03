@@ -745,14 +745,6 @@ function _level_display_html() {
   echo "<span style=\"color:${color}\">$(_escape_html "$label")</span>"
 }
 
-function _reachability_display() {
-  case "$1" in
-    Reachable) echo "✅ Reachable" ;;
-    "Potentially reachable") echo "⚠️ Potentially reachable" ;;
-    *) echo "➖ Not reachable" ;;
-  esac
-}
-
 function _scan_mode_icon() {
   if [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
     echo "✍️"
@@ -917,11 +909,45 @@ function _endor_jq_table_with_filter() {
     -L "${lib_dir}" "include \"annotation-table\"; ${query}" "$@"
 }
 
+function _annotation_reachability_cell_html() {
+  local dep="$1"
+  local fn="$2"
+  local cell=""
+
+  if [[ -n "$dep" && "$dep" != "—" ]]; then
+    cell="Dep: $(_escape_html "$dep")"
+  fi
+  if [[ -n "$fn" ]]; then
+    if [[ -n "$cell" ]]; then
+      cell="${cell}<br>"
+    fi
+    cell="${cell}Fn: $(_escape_html "$fn")"
+  fi
+
+  if [[ -z "$cell" ]]; then
+    echo "—"
+  else
+    echo "$cell"
+  fi
+}
+
+function _annotation_table_legend_html() {
+  local mode="$1"
+  case "$mode" in
+    dependencies)
+      echo "<p><em>Reachability: Dep = dependency in graph; Fn = vulnerable function (call graph).</em></p>"
+      ;;
+  esac
+}
+
 function _annotation_table_header_html() {
   local mode="$1"
   case "$mode" in
     dependencies)
-      echo "<table><thead><tr><th>Severity</th><th>Finding</th><th>Package</th><th>Reach</th><th>Location</th><th>Tags</th></tr></thead><tbody>"
+      echo "<table><thead><tr><th>Severity</th><th>Finding</th><th>Package</th><th>Reachability</th><th>Location</th><th>Tags</th></tr></thead><tbody>"
+      ;;
+    sast|ai-sast)
+      echo "<table><thead><tr><th>Severity</th><th>Finding</th><th>CWE</th><th>Location</th><th>Tags</th></tr></thead><tbody>"
       ;;
     *)
       echo "<table><thead><tr><th>Severity</th><th>Finding</th><th>Location</th><th>Tags</th></tr></thead><tbody>"
@@ -932,7 +958,7 @@ function _annotation_table_header_html() {
 function _annotation_table_row_html() {
   local mode="$1"
   local row_json="$2"
-  local level title badges detail url endor_url package reach
+  local level title badges detail url endor_url package reach_dep reach_fn cwe
   level="$(jq -r '.level // empty' <<<"$row_json")"
   [[ -n "$level" ]] || return 0
   title="$(jq -r '.title // empty' <<<"$row_json")"
@@ -941,7 +967,9 @@ function _annotation_table_row_html() {
   url="$(jq -r '.url // empty' <<<"$row_json")"
   endor_url="$(jq -r '.endor_url // empty' <<<"$row_json")"
   package="$(jq -r '.package // empty' <<<"$row_json")"
-  reach="$(jq -r '.reach // empty' <<<"$row_json")"
+  reach_dep="$(jq -r '.reach_dep // empty' <<<"$row_json")"
+  reach_fn="$(jq -r '.reach_fn // empty' <<<"$row_json")"
+  cwe="$(jq -r '.cwe // empty' <<<"$row_json")"
 
   local loc_cell
   if [[ -n "$url" && "$url" =~ ^https?:// ]]; then
@@ -965,7 +993,13 @@ function _annotation_table_row_html() {
   local row="<tr><td>$(_level_display_html "$level")</td><td>${title_html}</td>"
   if [[ "$mode" == "dependencies" ]]; then
     row="${row}<td>$(_escape_html "$package")</td>"
-    row="${row}<td>$(_escape_html "$(_reachability_display "$reach")")</td>"
+    row="${row}<td>$(_annotation_reachability_cell_html "$reach_dep" "$reach_fn")</td>"
+  elif [[ "$mode" == "sast" || "$mode" == "ai-sast" ]]; then
+    if [[ -n "$cwe" && "$cwe" != "—" ]]; then
+      row="${row}<td>$(_escape_html "$cwe")</td>"
+    else
+      row="${row}<td>—</td>"
+    fi
   fi
   row="${row}<td>${loc_cell}</td><td>${tags_cell}</td></tr>"
   echo "$row"
@@ -1180,6 +1214,11 @@ function _build_findings_annotation_html() {
     echo "<p><strong>Showing $(_escape_html "$shown") of $(_escape_html "$total") findings</strong> (all critical/high plus up to $(_escape_html "$limit") medium/low; full list in JSON artifact)</p>"
   else
     echo "<p><strong>Findings</strong></p>"
+  fi
+  local legend_html
+  legend_html="$(_annotation_table_legend_html "$table_mode")"
+  if [[ -n "$legend_html" ]]; then
+    echo "${legend_html}"
   fi
   echo "$(_annotation_table_header_html "$table_mode")${table_rows}</tbody></table>"
 }

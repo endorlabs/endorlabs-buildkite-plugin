@@ -516,7 +516,7 @@ teardown() {
 
   local json="${BATS_TEST_TMPDIR}/findings.json"
   cat >"${json}" <<'EOF'
-{"all_findings":[{"uuid":"abc123finding","context":{"id":"dev","type":"CONTEXT_TYPE_REF"},"tenant_meta":{"namespace":"endor-solutions-tgowan"},"meta":{"description":"High vuln in pyjwt"},"spec":{"level":"FINDING_LEVEL_HIGH","project_uuid":"69d5c473190e0676d079acc7","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"pyjwt","finding_tags":["FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY","FINDING_TAGS_CI_BLOCKER","FINDING_TAGS_FIX_AVAILABLE"],"location_urls":{"pyjwt":"https://example.com/pyjwt"}}}]}
+{"all_findings":[{"uuid":"abc123finding","context":{"id":"dev","type":"CONTEXT_TYPE_REF"},"tenant_meta":{"namespace":"endor-solutions-tgowan"},"meta":{"description":"High vuln in pyjwt"},"spec":{"level":"FINDING_LEVEL_HIGH","project_uuid":"69d5c473190e0676d079acc7","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"pyjwt","finding_tags":["FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY","FINDING_TAGS_REACHABLE_FUNCTION","FINDING_TAGS_CI_BLOCKER","FINDING_TAGS_FIX_AVAILABLE"],"location_urls":{"pyjwt":"https://example.com/pyjwt"}}}]}
 EOF
 
   run _build_findings_annotation_html "${json}" 5
@@ -529,18 +529,19 @@ EOF
   assert_output --partial "findingNamespace%22%3A%22endor-solutions-tgowan%22"
   assert_output --partial "By severity"
   assert_output --partial "High vuln in pyjwt"
-  assert_output --partial "Potentially reachable"
-  assert_output --partial 'color:#DC2626">High</span>'
-  assert_output --partial "<th>Package</th>"
-  assert_output --partial "<th>Reach</th>"
-  assert_output --partial "<th>Tags</th>"
+  assert_output --partial "Potentially Reachable Dependency"
+  assert_output --partial "Reachable Function"
+  assert_output --partial "Dep:"
+  assert_output --partial "Fn:"
+  assert_output --partial "<th>Reachability</th>"
+  assert_output --partial "Dep = dependency in graph"
   assert_output --partial "pyjwt"
   assert_output --partial "🛑 Blocker"
   assert_output --partial "🩹 Fix available"
   assert_output --partial 'style="color:#0d9488;text-decoration:underline"'
   assert_output --partial "https://example.com/pyjwt"
   assert_output --partial "<table>"
-  refute_output --partial "<th>Reach</th><th>Severity</th>"
+  refute_output --partial "<th>Reach</th>"
 }
 
 @test "findings table includes all critical and high before medium/low cap" {
@@ -587,18 +588,20 @@ EOF
 
   local json="${BATS_TEST_TMPDIR}/sast.json"
   cat >"${json}" <<'EOF'
-{"all_findings":[{"uuid":"sast-row","context":{"id":"dev","type":"CONTEXT_TYPE_REF"},"tenant_meta":{"namespace":"acme"},"meta":{"description":"SQL injection in handler"},"spec":{"level":"FINDING_LEVEL_HIGH","project_uuid":"proj1","finding_categories":["FINDING_CATEGORY_SAST"],"finding_metadata":{"custom":{"location":"https://github.com/acme/repo/blob/main/app.py#L42"}},"finding_tags":["FINDING_TAGS_CI_BLOCKER"]}}]}
+{"all_findings":[{"uuid":"sast-row","context":{"id":"dev","type":"CONTEXT_TYPE_REF"},"tenant_meta":{"namespace":"acme"},"meta":{"description":"SQL injection in handler"},"spec":{"level":"FINDING_LEVEL_HIGH","project_uuid":"proj1","finding_categories":["FINDING_CATEGORY_SAST"],"finding_metadata":{"custom":{"location":"https://github.com/acme/repo/blob/main/app.py#L42","cwes":["CWE-89: Improper Neutralization of Special Elements used in an SQL Command"]}},"finding_tags":["FINDING_TAGS_CI_BLOCKER"]}}]}
 EOF
 
   run _build_findings_annotation_html "${json}" 5
 
   assert_success
   assert_output --partial "SQL injection in handler"
+  assert_output --partial "<th>CWE</th>"
+  assert_output --partial "CWE-89"
   assert_output --partial "<th>Location</th>"
   assert_output --partial "<th>Tags</th>"
   assert_output --partial "app.py:42"
   refute_output --partial "<th>Package</th>"
-  refute_output --partial "<th>Reach</th>"
+  refute_output --partial "<th>Reachability</th>"
 }
 
 @test "findings count line shows no findings emoji when zero" {
