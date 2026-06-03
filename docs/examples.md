@@ -5,9 +5,36 @@ Plugin keys mirror the official
 applicable (`namespace`, scan toggles, PR options, container, sign/verify).
 See [`plugin.yml`](../plugin.yml) for the full schema.
 
-## Minimal: SCA scan after build
+**Recommended:** vendored plugin path + Buildkite cluster secrets (see
+[customer-buildkite-setup.md](customer-buildkite-setup.md)). After `v0.1.0` is
+tagged and listed in the [Buildkite plugin directory](https://buildkite.com/docs/pipelines/integrations/plugins/directory),
+you may use `endorlabs#v0.1.0` if agents can clone the public repo.
+
+## Buildkite: cluster secrets + vendored plugin
+
+See [getting-started.md](getting-started.md) for the full customer path. Minimal YAML:
+
+```yaml
+secrets:
+  - ENDOR_NAMESPACE
+  - ENDOR_API_CREDENTIALS_KEY
+  - ENDOR_API_CREDENTIALS_SECRET
+
+steps:
+  - command: "make build"
+    plugins:
+      - ./.buildkite/vendor/endorlabs-buildkite-plugin:
+          namespace: "${ENDOR_NAMESPACE}"
+          api_key_env: ENDOR_API_CREDENTIALS_KEY
+          api_secret_env: ENDOR_API_CREDENTIALS_SECRET
+          scan_dependencies: true
+          annotate: true
+```
+
+## Minimal: SCA scan after build (git plugin reference)
 
 Run the user step's `command`, then scan dependencies as a `post-command`.
+Use when agents can clone `github.com/endorlabs/endorlabs-buildkite-plugin`.
 
 ```yaml
 steps:
@@ -25,27 +52,6 @@ the env-var names you pass in `api_key_env` / `api_secret_env`. On
 Buildkite, use cluster secrets and a pipeline `secrets:` block — see
 [customer-buildkite-setup.md](customer-buildkite-setup.md). Never commit
 credential values to your pipeline file.
-
-## Buildkite: cluster secrets + vendored plugin
-
-```yaml
-env:
-  ENDOR_NAMESPACE: "${ENDOR_NAMESPACE}"
-
-secrets:
-  - ENDOR_API_CREDENTIALS_KEY
-  - ENDOR_API_CREDENTIALS_SECRET
-
-steps:
-  - command: "make build"
-    plugins:
-      - ./.buildkite/vendor/endorlabs-buildkite-plugin:
-          namespace: "${ENDOR_NAMESPACE}"
-          api_key_env: ENDOR_API_CREDENTIALS_KEY
-          api_secret_env: ENDOR_API_CREDENTIALS_SECRET
-          scan_dependencies: true
-          annotate: true
-```
 
 ## Pin endorctl version
 
@@ -131,7 +137,7 @@ steps:
           output_type: "json"
 ```
 
-## Multi-signal repo scan (Phase 2 toggles)
+## Multi-signal repo scan
 
 Enable additional scan kinds beyond dependencies.
 
@@ -151,24 +157,14 @@ steps:
           phantom_dependencies: true
 ```
 
-## Bazel scan (repro-sandbox style)
+## Bazel monorepos
 
-Use this pattern for Bazel monorepos (adjust targets and query to your workspace).
-
-```yaml
-steps:
-  - command: "bazel test //..."
-    plugins:
-      - endorlabs#v0.1.0:
-          namespace: "your-namespace"
-          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
-          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
-          scan_dependencies: true
-          use_bazel: true
-          bazel_include_targets: "//..."
-          bazel_exclude_targets: "//third_party/..."
-          bazel_targets_query: "kind(go_library, //...)"
-```
+For Bazel target selection, aspects, and layered scan examples, see
+[repro-sandbox](https://github.com/endorlabs/repro-sandbox) (optional
+`pipeline.layered-scans.yml`). Core plugin options: `use_bazel`,
+`bazel_include_targets`, `bazel_exclude_targets`, and `bazel_targets_query`
+(omit `bazel_targets_query` when `--bazel-include-targets` is set in
+`additional_args`).
 
 ## Pull-request scans (auto-detect)
 

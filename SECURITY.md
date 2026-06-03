@@ -28,8 +28,3 @@ vulnerable dependency data, code locations, or policy findings. Treat them as
 
 Buildkite annotations (`annotate: true`) publish only a sanitized summary (status
 and optional finding count), not raw scan JSON or credentials.
-
-## Maintainer local testing
-
-Scripts under `contrib/local-smoke/` read a gitignored `.env`. Do not commit `.local/`
-(logs, scan JSON, `paths.env`, rendered matrix YAML) or other maintainer artifacts.

@@ -1,5 +1,5 @@
 name: Endor Labs
-description: Scan with endorctl in your Buildkite pipelines
+description: Run endorctl in Buildkite CI — SCA, SAST, secrets, containers, and policy gating for the Endor Labs platform
 author: https://github.com/endorlabs
 requirements:
   - bash

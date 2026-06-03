@@ -425,7 +425,8 @@ function run_repo_scan() {
     if [[ -n "$ENDOR_PLUGIN_BAZEL_EXCLUDE_TARGETS" ]]; then
       args+=("--bazel-exclude-targets=${ENDOR_PLUGIN_BAZEL_EXCLUDE_TARGETS}")
     fi
-    if [[ -n "$ENDOR_PLUGIN_BAZEL_TARGETS_QUERY" ]]; then
+    # endorctl rejects --bazel-targets-query together with --bazel-include-targets.
+    if [[ -n "$ENDOR_PLUGIN_BAZEL_TARGETS_QUERY" ]] && ! plugin_bazel_include_targets_configured; then
       args+=("--bazel-targets-query=${ENDOR_PLUGIN_BAZEL_TARGETS_QUERY}")
     fi
   fi

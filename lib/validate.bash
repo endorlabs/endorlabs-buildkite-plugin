@@ -116,6 +116,12 @@ function validate_scan_config() {
     log_fatal "endorlabs plugin: disable_code_snippet_storage requires scan_sast=true"
   fi
 
+  local bazel_include="${ENDOR_PLUGIN_BAZEL_INCLUDE_TARGETS:-}"
+  local bazel_query="${ENDOR_PLUGIN_BAZEL_TARGETS_QUERY:-}"
+  if [[ -n "$bazel_include" && -n "$bazel_query" ]]; then
+    log_fatal "endorlabs plugin: bazel_include_targets and bazel_targets_query are mutually exclusive; use only one"
+  fi
+
   # Cloud keyless auth modes are mutually exclusive and cannot be mixed with
   # API key mode.
   local auth_modes=0
@@ -154,7 +160,7 @@ function validate_scan_config() {
     fi
   fi
 
-  # Phase 3: PR incremental + PR comments (mirrors github-action scan.ts checks;
+  # PR incremental + PR comments (mirrors github-action scan.ts checks;
   # Buildkite uses numeric BUILDKITE_PULL_REQUEST and scm_token_env indirection.)
   local pr_incremental="${ENDOR_PLUGIN_PR_INCREMENTAL:-false}"
   local enable_pr_comments="${ENDOR_PLUGIN_ENABLE_PR_COMMENTS:-false}"

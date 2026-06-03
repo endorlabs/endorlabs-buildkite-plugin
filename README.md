@@ -2,43 +2,54 @@
 
 [![CI](https://github.com/endorlabs/endorlabs-buildkite-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/endorlabs/endorlabs-buildkite-plugin/actions/workflows/ci.yml)
 
-Run [endorctl](https://docs.endorlabs.com) security scans in your
-[Buildkite](https://buildkite.com) pipelines: dependency (SCA), secrets, SAST,
-containers, policy gating, PR workflows, and artifact sign/verify.
+Endor Labs is a unified application security platform that helps you ship secure
+code by default. This repository is the **Buildkite plugin** for running
+[endorctl](https://docs.endorlabs.com/developers-api/cli/commands/scan) in your
+pipelines — product and CLI reference: [docs.endorlabs.com](https://docs.endorlabs.com/).
 
-This plugin aims for behavioural parity with the official
-[Endor Labs GitHub Action](https://github.com/endorlabs/github-action) so
-the same flags and outputs work across CI providers.
+The plugin is aligned with the official
+[Endor Labs GitHub Action](https://github.com/endorlabs/github-action) so the
+same scan flags and outputs work across CI providers.
 
-**Initial release:** `v0.1.0` — see [docs/examples.md](docs/examples.md) for pipeline
-patterns.
+**New customer on Buildkite?** Follow [docs/getting-started.md](docs/getting-started.md)
+(end-to-end: secrets → vendoring → first green build). Reference:
+[docs/customer-buildkite-setup.md](docs/customer-buildkite-setup.md),
+[docs/examples.md](docs/examples.md),
+[docs/troubleshooting.md](docs/troubleshooting.md).
 
-## Getting started
+## Quick example (vendored plugin)
 
-Run the step's `command` first, then scan dependencies after it
-completes. See [docs/examples.md](docs/examples.md) for more patterns
-(pinned versions, SARIF output, custom scan paths, PR scans, …).
+Run your step `command` first; the plugin `post-command` hook installs
+`endorctl`, authenticates, and scans afterward.
 
 ```yaml
+secrets:
+  - ENDOR_NAMESPACE
+  - ENDOR_API_CREDENTIALS_KEY
+  - ENDOR_API_CREDENTIALS_SECRET
+
 steps:
   - label: ":hammer: Build and scan"
     command: "make build"
     plugins:
-      - endorlabs#v0.1.0:
-          namespace: "your-namespace"
-          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
-          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
+      - ./.buildkite/vendor/endorlabs-buildkite-plugin:
+          namespace: "${ENDOR_NAMESPACE}"
+          api_key_env: ENDOR_API_CREDENTIALS_KEY
+          api_secret_env: ENDOR_API_CREDENTIALS_SECRET
+          scan_dependencies: true
+          annotate: true
 ```
 
-Expose `ENDOR_API_CREDENTIALS_KEY` and `ENDOR_API_CREDENTIALS_SECRET` on the
-agent (Buildkite cluster secrets, the `secrets:` pipeline block, or your secret
-manager). The plugin reads them by the names you set in `api_key_env` /
-`api_secret_env`; values never belong in pipeline YAML.
+Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh)
+and commit `.buildkite/vendor/endorlabs-buildkite-plugin/` plus `VENDOR_SOURCE.json`.
+After `v0.1.0` is public, you may use `endorlabs#v0.1.0` if agents can clone this repo.
+
+Demo pipeline: [repro-sandbox](https://github.com/endorlabs/repro-sandbox) on Buildkite.
 
 ## Configuration
 
 Schema is in [`plugin.yml`](plugin.yml); `additionalProperties: false`
-means typos are rejected by the Buildkite plugin-linter at PR time.
+means typos are rejected by the [buildkite/plugin-linter](https://github.com/buildkite-plugins/buildkite-plugin-linter) CLI at PR time.
 
 ### Core options
 
@@ -236,8 +247,8 @@ where shipping both `command` and `post-command` would silently replace
 the user's command.
 
 If you want compile-then-scan in a single step but need the scan to run
-even when the user command fails, wrap the command yourself and call
-the plugin from a downstream step (see [ROADMAP.md](ROADMAP.md)).
+even when the user command fails, wrap the command yourself and invoke
+the plugin from a downstream step.
 
 ### Scan outputs
 
@@ -254,10 +265,8 @@ The plugin does not log API keys or SCM tokens. See [SECURITY.md](SECURITY.md) a
    when the plugin repo is in another org; use a git URL only if agents can clone it.
 
 ```yaml
-env:
-  ENDOR_NAMESPACE: "${ENDOR_NAMESPACE}"
-
 secrets:
+  - ENDOR_NAMESPACE
   - ENDOR_API_CREDENTIALS_KEY
   - ENDOR_API_CREDENTIALS_SECRET
 
@@ -272,12 +281,13 @@ steps:
 ```
 
 Reference integration: [repro-sandbox](https://github.com/endorlabs/repro-sandbox)
-`.buildkite/pipeline.yml` (layered filesystem + Bazel scans).
+`.buildkite/pipeline.yml`.
 
 ## Developing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Maintainers: optional validation matrix
-and local Docker smoke tests are in [docs/maintainers/validation.md](docs/maintainers/validation.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Hosted end-to-end scans run in
+[repro-sandbox](https://github.com/endorlabs/repro-sandbox) with a vendored copy
+of this plugin.
 
 Quick test run:
 
@@ -286,10 +296,6 @@ docker compose run --rm tests
 ```
 
 PR scans, incremental mode, and SCM comments: [docs/troubleshooting.md](docs/troubleshooting.md).
-
-## Roadmap
-
-See [ROADMAP.md](ROADMAP.md).
 
 ## License
 

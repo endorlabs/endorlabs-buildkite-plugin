@@ -1,21 +1,27 @@
+# CI mirrors .github/workflows/ci.yml
+#
+# - shellcheck-buildkite-plugin: pinned by git commit (tag v1.4.0)
+# - buildkite/plugin-linter: official CLI Docker image (validates plugin.yml + docs/examples.md)
+# - plugin-tester-buildkite-plugin: pinned by git commit; runs buildkite/plugin-tester image (BATS)
+
 steps:
   - label: ":shell: Shellcheck"
     plugins:
-      shellcheck#v1.4.0:
+      shellcheck#415387ef211e65b77616308e8231ff4a7acd6935: # v1.4.0
         files:
           - hooks/**
           - lib/**
-          - scripts/validation/render-matrix.sh
 
-  - label: ":sparkles: Plugin linter"
-    plugins:
-      plugin-linter#v3.3.0:
-        id: endorlabs
-        image-version: v3.0.0
-        readme: docs/examples.md
+  - label: ":sparkles: Lint plugin.yml and examples"
+    command: |
+      docker run --rm \
+        -v "$$PWD:/plugin" \
+        -w /plugin \
+        buildkite/plugin-linter@sha256:6ad2532e7763eb9a2f9d8f1700b3424e0ec4310721d90e10026f7e3bdfd06cd2 \
+        --id endorlabs \
+        --readme docs/examples.md
 
   - label: ":bash: BATS"
     plugins:
-      docker-compose#v5.0.0:
-        run: tests
-        config: docker-compose.yml
+      plugin-tester#4bcc01516aa357ac887afaf28e41de32bea8cc75: # v1.3.0
+        version: v4.3.0 # buildkite/plugin-tester@sha256:86c728d8526e22f5d26c1b65e2cae1dfb2d9767fe24d560563895d051b258c84

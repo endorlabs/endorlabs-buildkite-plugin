@@ -1,5 +1,8 @@
 # Troubleshooting
 
+Onboarding path: [getting-started.md](getting-started.md). Setup details:
+[customer-buildkite-setup.md](customer-buildkite-setup.md).
+
 ## Scan outputs and secrets
 
 `output_file`, `sarif_file`, and artifacts uploaded with `upload_artifacts: true`
@@ -25,18 +28,25 @@ when Git is detached.
   `BUILDKITE_PULL_REQUEST`), `pr: false` must not be set, and `scm_token_env`
   must name a non-empty environment variable on the agent.
 
+## AI-SAST and pull requests
+
+endorctl rejects `--pr` without `--pr-incremental` when `--ai-sast` is enabled. Use
+`pr_incremental: true` (with PR id and baseline context), or `pr: false` for
+monitoring-style scans on PR builds.
+
 ## SCM tokens vs Buildkite OIDC
 
 There is no first-class Buildkite OIDC flow in this plugin for SCM commenting.
 Provide a suitable PAT or bot token on the agent (for example via the
 Buildkite secrets plugin) and reference it with `scm_token_env`.
 
-## Buildkite: vendored vs remote plugin
+## Buildkite: vendored plugin (recommended)
 
-- **Remote plugin fails with `Authentication failed` for `endorlabs-buildkite-plugin.git`**
-  — the job’s GitHub credentials can read your app repo but not the plugin org.
-  Use a **vendored** copy under `.buildkite/vendor/endorlabs-buildkite-plugin/`, or
-  install the Buildkite GitHub App on the plugin’s org with read access to that repo.
+- **Plugin checkout / `Authentication failed` for `endorlabs-buildkite-plugin.git`**
+  — you used a remote `https://github.com/...git#ref` plugin key. The job’s GitHub
+  credentials can read your app repo but not the plugin org. **Vendor** the plugin under
+  `.buildkite/vendor/endorlabs-buildkite-plugin/` instead (see
+  [customer-buildkite-setup.md](customer-buildkite-setup.md)).
 - **Build failed but you expected only scan results** — `post-command` runs after your
   `command`. If Bazel/make fails, the step is red even when the plugin runs. Fix the
   build, or split scan into a separate step that depends on a successful build.
@@ -50,10 +60,11 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   (for example `endorlabs-bk-filesystem`, `endorlabs-bk-bazel`).
 - **Finding count missing on the annotation** — install `jq` on the agent if you use
   `output_file` / JSON capture; without `jq`, status text still appears but counts may be omitted.
-- **Plugin checkout uses the wrong ref** — do not use `BUILDKITE_BRANCH` of the
-  application repo as the plugin git ref. Use one env var for the full spec (for example
-  `ENDORLABS_BUILDKITE_PLUGIN_SPEC=git@github.com:endorlabs/endorlabs-buildkite-plugin.git#main`).
-  Do not write `"${PLUGIN}#${REF}"` in pipeline YAML — Buildkite interpolation fails on `}#${`.
+- **Remote plugin uses the wrong ref** — do not use `BUILDKITE_BRANCH` of the
+  application repo as the plugin git ref. Prefer vendoring; if you must use a git URL,
+  use a single `https://github.com/org/repo.git#ref` string (not `git@github.com:…`
+  colon form). Do not write `"${PLUGIN}#${REF}"` in pipeline YAML — Buildkite
+  interpolation fails on `}#${`.
 - **`pipeline upload` failed: Expected identifier… got #** — combine plugin repo and ref
   into a single variable, use `./` when the plugin is the checked-out repository, or escape
   a literal `#` in pipeline env defaults as `##` ([Buildkite docs](https://buildkite.com/docs/pipelines/configure/definitions#encode-unsafe-characters)).

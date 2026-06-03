@@ -25,41 +25,31 @@ docker run --rm -v "${PWD}:/plugin" -w /plugin \
 
 On Windows, ensure `hooks/`, `lib/`, and `tests/` use LF line endings (see `.gitattributes`).
 
-## CI checks (GitHub Actions)
+## CI checks
 
 Pull requests and pushes to `main` run [.github/workflows/ci.yml](.github/workflows/ci.yml):
 
-1. **shellcheck** on `hooks/`, `lib/`, and maintainer scripts
-2. **plugin-linter** (`buildkite/plugin-linter`) with `id: endorlabs`, `readme: docs/examples.md`
-3. **BATS** via `docker compose run --rm tests`
+1. **shellcheck** on `hooks/` and `lib/`
+2. **buildkite/plugin-linter** CLI — validates `plugin.yml` and `docs/examples.md` (`id: endorlabs`)
+3. **BATS** via `docker compose run --rm tests` (image digest in [docker-compose.yml](docker-compose.yml))
 
-## CI checks (Buildkite)
-
-This repository’s `.buildkite/pipeline.yml` runs the same checks on Buildkite:
-
-1. **shellcheck** on `hooks/**`, `lib/**`, and `scripts/validation/render-matrix.sh`
-2. **plugin-linter** with `id: endorlabs` and `readme: docs/examples.md`
-3. **BATS** via `docker-compose#v5.0.0`
+The same checks run on Buildkite via [`.buildkite/pipeline.yml`](.buildkite/pipeline.yml).
 
 ## Implementation references
 
 When changing scan behaviour or flags, cross-check:
 
+- [Writing Buildkite plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing) — `plugin.yml` schema, hooks, BATS, directory publish
 - [Endor Labs GitHub Action](https://github.com/endorlabs/github-action) — input → endorctl mapping
 - [endorctl CLI documentation](https://docs.endorlabs.com/developers-api/cli/commands/scan)
 
 Do not commit API keys, bearer tokens, `.env`, or anything under `.local/`. Tests use
 stubbed credentials only.
 
-## What gets pushed vs maintainer-only local runs
+## Hosted end-to-end validation
 
-**Push to this repo:** plugin code, `plugin.yml`, `docs/examples.md`, BATS tests, and
-CI config (shellcheck, plugin-linter, BATS). That is what PRs gate.
-
-**Stay on your machine (gitignored under `.local/`):** real-scan logs, scan JSON,
-`paths.env`, rendered matrix YAML, and credentials in `.env`. Optional real scans use
-[contrib/local-smoke/](contrib/local-smoke/) — see
-[docs/maintainers/validation.md](docs/maintainers/validation.md).
+Real `endorctl` scans against Endor Labs run in [repro-sandbox](https://github.com/endorlabs/repro-sandbox)
+with a vendored copy of this plugin and Buildkite cluster secrets — not in this repo's PR CI.
 
 ## Pull requests
 

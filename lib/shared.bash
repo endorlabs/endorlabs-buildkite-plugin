@@ -109,3 +109,14 @@ function bk_pull_request_is_numeric() {
   local p="${BUILDKITE_PULL_REQUEST:-}"
   [[ -n "$p" && "$p" != "false" && "$p" =~ ^[0-9]+$ ]]
 }
+
+# True when scan will pass --bazel-include-targets (plugin key or additional_args).
+function plugin_bazel_include_targets_configured() {
+  if [[ -n "${ENDOR_PLUGIN_BAZEL_INCLUDE_TARGETS:-}" ]]; then
+    return 0
+  fi
+  if [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--bazel-include-targets"* ]]; then
+    return 0
+  fi
+  return 1
+}

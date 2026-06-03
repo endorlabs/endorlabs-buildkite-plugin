@@ -379,12 +379,11 @@ teardown() {
   export BUILDKITE_PLUGIN_ENDORLABS_PHANTOM_DEPENDENCIES=true
   export BUILDKITE_PLUGIN_ENDORLABS_DISABLE_CODE_SNIPPET_STORAGE=true
   export BUILDKITE_PLUGIN_ENDORLABS_USE_BAZEL=true
-  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_INCLUDE_TARGETS=//app:all
   export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_EXCLUDE_TARGETS=//third_party:all
   export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_TARGETS_QUERY=kind\(go_library,//...\)
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --secrets=true --sast=true --tools=true --ghactions=true --ai-models=true --git-logs=true --phantom-dependencies=true --disable-code-snippet-storage=true --use-bazel=true --bazel-include-targets=//app:all --bazel-exclude-targets=//third_party:all --bazel-targets-query=kind\\(go_library,//...\\) : echo 'ran full scan'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --secrets=true --sast=true --tools=true --ghactions=true --ai-models=true --git-logs=true --phantom-dependencies=true --disable-code-snippet-storage=true --use-bazel=true --bazel-exclude-targets=//third_party:all --bazel-targets-query=kind\\(go_library,//...\\) : echo 'ran full scan'"
 
   run "$PWD"/hooks/post-command
 
@@ -659,4 +658,29 @@ teardown() {
 
   assert_success
   assert_output --partial "artifact uploaded"
+}
+
+@test "bazel_targets_query omitted when additional_args sets bazel-include-targets" {
+  export BUILDKITE_PLUGIN_ENDORLABS_USE_BAZEL=true
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_TARGETS_QUERY=kind\(go_library,//...\)
+  export BUILDKITE_PLUGIN_ENDORLABS_ADDITIONAL_ARGS="--use-bazel-aspects --bazel-include-targets=//app:main"
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --use-bazel=true --use-bazel-aspects --bazel-include-targets=//app:main : echo 'ran aspects scan'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "ran aspects scan"
+}
+
+@test "bazel_include_targets and bazel_targets_query together fail validation" {
+  export BUILDKITE_PLUGIN_ENDORLABS_USE_BAZEL=true
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_INCLUDE_TARGETS=//app:all
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_TARGETS_QUERY=kind\(go_library,//...\)
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "bazel_include_targets and bazel_targets_query are mutually exclusive"
 }
