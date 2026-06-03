@@ -43,8 +43,14 @@ When changing scan behaviour or flags, cross-check:
 - [Endor Labs GitHub Action](https://github.com/endorlabs/github-action) — input → endorctl mapping
 - [endorctl CLI documentation](https://docs.endorlabs.com/developers-api/cli/commands/scan)
 
-Do not commit API keys, bearer tokens, `.env`, or anything under `.local/`. Tests use
+Do not commit API keys, bearer tokens, `.env`, or anything under `.tmp/` or `.local/`. Tests use
 stubbed credentials only.
+
+### Local maintainer scratch (`.tmp/` only)
+
+**Rule:** Download helpers, annotation mockups, CSV/JSON validation, and other one-off maintainer scripts **must** live under **`.tmp/scripts/`**, not `scripts/`. The top-level `scripts/` directory is for committable repo automation only (e.g. vendor sync).
+
+See [docs/maintainers/local-tmp.md](docs/maintainers/local-tmp.md) for layout and commands.
 
 ## Hosted end-to-end validation
 

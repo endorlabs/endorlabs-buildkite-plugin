@@ -510,20 +510,180 @@ teardown() {
   # shellcheck source=lib/endorctl.bash
   source "$PWD/lib/endorctl.bash"
 
+  export ENDOR_PLUGIN_SCAN_DEPENDENCIES=true
+  export ENDOR_PLUGIN_SCAN_SAST=false
+  export ENDOR_PLUGIN_SCAN_SECRETS=false
+
   local json="${BATS_TEST_TMPDIR}/findings.json"
   cat >"${json}" <<'EOF'
-{"all_findings":[{"meta":{"description":"High vuln in pyjwt"},"spec":{"level":"FINDING_LEVEL_HIGH","target_dependency_name":"pyjwt","finding_tags":["FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY"],"location_urls":{"pyjwt":"https://example.com/pyjwt"}}}]}
+{"all_findings":[{"uuid":"abc123finding","context":{"id":"dev","type":"CONTEXT_TYPE_REF"},"tenant_meta":{"namespace":"endor-solutions-tgowan"},"meta":{"description":"High vuln in pyjwt"},"spec":{"level":"FINDING_LEVEL_HIGH","project_uuid":"69d5c473190e0676d079acc7","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"pyjwt","finding_tags":["FINDING_TAGS_POTENTIALLY_REACHABLE_DEPENDENCY","FINDING_TAGS_CI_BLOCKER","FINDING_TAGS_FIX_AVAILABLE"],"location_urls":{"pyjwt":"https://example.com/pyjwt"}}}]}
 EOF
 
   run _build_findings_annotation_html "${json}" 5
 
   assert_success
+  assert_output --partial "Findings (dev)"
+  assert_output --partial "https://app.endorlabs.com/t/endor-solutions-tgowan/projects/69d5c473190e0676d079acc7/versions/dev/findings?filter.values="
+  assert_output --partial "resourceDetail="
+  assert_output --partial "findingUuid%22%3A%22abc123finding%22"
+  assert_output --partial "findingNamespace%22%3A%22endor-solutions-tgowan%22"
   assert_output --partial "By severity"
   assert_output --partial "High vuln in pyjwt"
-  assert_output --partial "⚠️ Potentially reachable"
-  assert_output --partial "🟥 High"
+  assert_output --partial "Potentially reachable"
+  assert_output --partial 'color:#DC2626">High</span>'
+  assert_output --partial "<th>Package</th>"
+  assert_output --partial "<th>Reach</th>"
+  assert_output --partial "<th>Tags</th>"
+  assert_output --partial "pyjwt"
+  assert_output --partial "🛑 Blocker"
+  assert_output --partial "🩹 Fix available"
+  assert_output --partial 'style="color:#0d9488;text-decoration:underline"'
   assert_output --partial "https://example.com/pyjwt"
   assert_output --partial "<table>"
+  refute_output --partial "<th>Reach</th><th>Severity</th>"
+}
+
+@test "findings table includes all critical and high before medium/low cap" {
+  # shellcheck source=lib/shared.bash
+  source "$PWD/lib/shared.bash"
+  # shellcheck source=lib/endorctl.bash
+  source "$PWD/lib/endorctl.bash"
+
+  export ENDOR_PLUGIN_SCAN_DEPENDENCIES=true
+  export ENDOR_PLUGIN_SCAN_SAST=false
+
+  local json="${BATS_TEST_TMPDIR}/mixed-severity.json"
+  cat >"${json}" <<'EOF'
+{"all_findings":[
+  {"uuid":"low1","meta":{"description":"Low issue"},"spec":{"level":"FINDING_LEVEL_LOW","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"low-pkg"}},
+  {"uuid":"med1","meta":{"description":"Medium issue"},"spec":{"level":"FINDING_LEVEL_MEDIUM","finding_categories":["FINDING_CATEGORY_SCA"],"target_dependency_name":"med-pkg"}},
+  {"uuid":"med2","meta":{"description":"Medium issue two"},"spec":{"level":"FINDING_LEVEL_MEDIUM","finding_categories":["FINDING_CATEGORY_SCA"],"target_dependency_name":"med-pkg-2"}},
+  {"uuid":"high1","meta":{"description":"High issue"},"spec":{"level":"FINDING_LEVEL_HIGH","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"high-pkg"}},
+  {"uuid":"crit1","meta":{"description":"Critical issue"},"spec":{"level":"FINDING_LEVEL_CRITICAL","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"crit-pkg"}}
+]}
+EOF
+
+  run _build_findings_annotation_html "${json}" 1
+
+  assert_success
+  assert_output --partial "Critical issue"
+  assert_output --partial "High issue"
+  assert_output --partial "Medium issue"
+  refute_output --partial "Medium issue two"
+  refute_output --partial "Low issue"
+  assert_output --partial "Showing 3 of 5 findings"
+}
+
+@test "SAST step table has location and tags without reach or package columns" {
+  # shellcheck source=lib/shared.bash
+  source "$PWD/lib/shared.bash"
+  # shellcheck source=lib/endorctl.bash
+  source "$PWD/lib/endorctl.bash"
+
+  export ENDOR_PLUGIN_SCAN_DEPENDENCIES=false
+  export ENDOR_PLUGIN_SCAN_SAST=true
+  export ENDOR_PLUGIN_SCAN_SECRETS=false
+  export ENDOR_PLUGIN_ADDITIONAL_ARGS=""
+
+  local json="${BATS_TEST_TMPDIR}/sast.json"
+  cat >"${json}" <<'EOF'
+{"all_findings":[{"uuid":"sast-row","context":{"id":"dev","type":"CONTEXT_TYPE_REF"},"tenant_meta":{"namespace":"acme"},"meta":{"description":"SQL injection in handler"},"spec":{"level":"FINDING_LEVEL_HIGH","project_uuid":"proj1","finding_categories":["FINDING_CATEGORY_SAST"],"finding_metadata":{"custom":{"location":"https://github.com/acme/repo/blob/main/app.py#L42"}},"finding_tags":["FINDING_TAGS_CI_BLOCKER"]}}]}
+EOF
+
+  run _build_findings_annotation_html "${json}" 5
+
+  assert_success
+  assert_output --partial "SQL injection in handler"
+  assert_output --partial "<th>Location</th>"
+  assert_output --partial "<th>Tags</th>"
+  assert_output --partial "app.py:42"
+  refute_output --partial "<th>Package</th>"
+  refute_output --partial "<th>Reach</th>"
+}
+
+@test "findings count line shows no findings emoji when zero" {
+  # shellcheck source=lib/shared.bash
+  source "$PWD/lib/shared.bash"
+  # shellcheck source=lib/endorctl.bash
+  source "$PWD/lib/endorctl.bash"
+
+  run _findings_count_line_html 0 0 "dependencies scan"
+
+  assert_success
+  assert_output --partial "✨ No findings for dependencies scan"
+}
+
+@test "policy counts html renders blocking and warning lists" {
+  # shellcheck source=lib/shared.bash
+  source "$PWD/lib/shared.bash"
+  # shellcheck source=lib/endorctl.bash
+  source "$PWD/lib/endorctl.bash"
+
+  export ENDOR_PLUGIN_SCAN_DEPENDENCIES=true
+  export ENDOR_PLUGIN_SCAN_SAST=false
+
+  local json="${BATS_TEST_TMPDIR}/policy.json"
+  cat >"${json}" <<'EOF'
+{"blocking_findings":[
+  {"spec":{"finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"level":"FINDING_LEVEL_HIGH"}},
+  {"spec":{"finding_categories":["FINDING_CATEGORY_SCA"],"level":"FINDING_LEVEL_MEDIUM"}}
+],"warning_findings":[
+  {"spec":{"finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"level":"FINDING_LEVEL_LOW"}}
+]}
+EOF
+
+  run _build_policy_counts_html "${json}"
+
+  assert_success
+  assert_output --partial "📊 Policy findings (this scan)"
+  assert_output --partial "🛑 2 blocking"
+  assert_output --partial "⚠️ 1 policy warnings"
+}
+
+@test "dependencies step filters out SAST findings and SAST admission warnings" {
+  # shellcheck source=lib/shared.bash
+  source "$PWD/lib/shared.bash"
+  # shellcheck source=lib/endorctl.bash
+  source "$PWD/lib/endorctl.bash"
+
+  export ENDOR_PLUGIN_SCAN_DEPENDENCIES=true
+  export ENDOR_PLUGIN_SCAN_SAST=false
+  export ENDOR_PLUGIN_SCAN_SECRETS=false
+
+  local json="${BATS_TEST_TMPDIR}/mixed.json"
+  cat >"${json}" <<'EOF'
+{"warnings":["Changes violate admission policy: SAST","Changes violate admission policy: Vulnerabilities"],"all_findings":[
+  {"uuid":"sast1","meta":{"description":"AI SAST issue"},"spec":{"level":"FINDING_LEVEL_HIGH","finding_categories":["FINDING_CATEGORY_SAST"],"finding_tags":["FINDING_TAGS_AI"]}},
+  {"uuid":"sca1","meta":{"description":"CVE in libfoo"},"spec":{"level":"FINDING_LEVEL_MEDIUM","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"libfoo"}}
+]}
+EOF
+
+  run _build_findings_annotation_html "${json}" 10
+
+  assert_success
+  refute_output --partial "AI SAST issue"
+  assert_output --partial "CVE in libfoo"
+
+  run _build_admission_warnings_html "${json}"
+  assert_success
+  assert_output --partial "Vulnerabilities"
+  refute_output --partial "SAST"
+}
+
+@test "endor project link uses pr-runs path for CI run context" {
+  # shellcheck source=lib/shared.bash
+  source "$PWD/lib/shared.bash"
+  # shellcheck source=lib/endorctl.bash
+  source "$PWD/lib/endorctl.bash"
+
+  local json="${BATS_TEST_TMPDIR}/pr-run.json"
+  echo '{"blocking_findings":[{"context":{"id":"pr-uuid-99","type":"CONTEXT_TYPE_CI_RUN"},"tenant_meta":{"namespace":"acme-ns"},"spec":{"project_uuid":"proj001"}}]}' >"${json}"
+
+  run _build_endor_project_link_html "${json}"
+
+  assert_success
+  assert_output --partial "Findings (PR pr-uuid-99)"
+  assert_output --partial "https://app.endorlabs.com/t/acme-ns/projects/proj001/pr-runs/pr-uuid-99/findings?filter.values="
 }
 
 @test "annotate_scope=job passes --scope job to buildkite-agent" {

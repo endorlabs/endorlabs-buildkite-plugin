@@ -22,8 +22,25 @@ desktop.ini
 *.bats.bak
 /tmp/
 
-# Maintainer-only local artifacts (logs, scan JSON, paths.env, rendered matrix)
+# Maintainer-only local scratch (see docs/maintainers/local-tmp.md)
+#   .tmp/scripts/  — validation, downloads, mockups (never commit)
+#   .tmp/exports/  .tmp/validation/  .tmp/mockups/
+.tmp/
+
+# Legacy path — do not use for new work
 .local/
 .validation-logs/
 endor-output.json
 endor-bk-*.json
+
+# Local shellcheck extract (CI downloads per run)
+shellcheck-*/
+
+# BATS / maintainer scratch
+tests/tmp*.json
+
+# Generated annotation HTML preview (see .tmp/scripts/generate-annotation-mockup.bash)
+docs/mockups/annotation-preview.html
+
+# Accidental local vendor copy (consumers use repro-sandbox sync script)
+.buildkite/vendor/

@@ -22,6 +22,9 @@ mkdir -p "$DST/hooks" "$DST/lib"
 install -m 0755 "$SRC/hooks/post-command" "$DST/hooks/post-command"
 cp "$SRC/plugin.yml" "$DST/plugin.yml"
 cp "$SRC/lib/"*.bash "$DST/lib/"
+if compgen -G "$SRC/lib/"*.jq >/dev/null; then
+  cp "$SRC/lib/"*.jq "$DST/lib/"
+fi
 
 if command -v git >/dev/null 2>&1 && git -C "$SRC" rev-parse HEAD >/dev/null 2>&1; then
   commit="$(git -C "$SRC" rev-parse HEAD)"
