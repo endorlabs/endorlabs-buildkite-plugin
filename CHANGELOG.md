@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.2] - 2026-06-03
+
+### Added
+
+- Windows hook entrypoints per [Writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing):
+  `hooks/post-command.bat` and `hooks/post-command.ps1` delegate to the Bash implementation
+  (Git Bash required on Windows agents).
+
+### Fixed
+
+- Git Bash / MSYS: set `MSYS_NO_PATHCONV=1` during `post-command` and when loading
+  `BUILDKITE_ENV_FILE` (matches docker-compose plugin pattern).
+
+### Documentation
+
+- README: Windows agent requirements; `docs/examples.md` examples use `v0.1.1` and document
+  full GitHub plugin URL vs `endorlabs#` shorthand.
+
 ## [0.1.1] - 2026-06-03
 
 ### Fixed

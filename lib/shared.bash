@@ -106,6 +106,9 @@ function is_macos() {
 # Load env vars written during the step command (e.g. PATH for bazel) before post-command.
 # Step scripts often run in bash subshells; customers append to BUILDKITE_ENV_FILE.
 function plugin_load_step_environment() {
+  if is_windows; then
+    export MSYS_NO_PATHCONV=1
+  fi
   if [[ -n "${BUILDKITE_ENV_FILE:-}" && -f "${BUILDKITE_ENV_FILE}" ]]; then
     set -a
     # shellcheck disable=SC1090

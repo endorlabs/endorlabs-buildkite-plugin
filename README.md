@@ -42,9 +42,25 @@ steps:
 
 Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh)
 and commit `.buildkite/vendor/endorlabs-buildkite-plugin/` plus `VENDOR_SOURCE.json`.
-After `v0.1.0` is public, you may use `endorlabs#v0.1.0` if agents can clone this repo.
+After the repo is public, you may use `endorlabs#v0.1.1` once the
+[Buildkite plugins directory](https://buildkite.com/docs/integrations/buildkite-plugins)
+syncs, or use
+`https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.1` today.
 
 Demo pipeline: [repro-sandbox](https://github.com/endorlabs/repro-sandbox) on Buildkite.
+
+## Windows agents
+
+Per the [Writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing)
+guide, the plugin ships `hooks/post-command.bat` and `hooks/post-command.ps1` so Buildkite
+can select a Windows hook file; both **delegate to** `hooks/post-command` (Bash).
+
+- **Supported:** Windows agents with **Git Bash** (or WSL bash on `PATH`) — same model as
+  other Bash-first plugins (for example docker-compose uses Bash + `is_windows` guards, not
+  duplicated scan logic in `.bat`).
+- **Install:** `endorctl` Windows binaries (`endorctl.exe`) are downloaded when the hook runs
+  under Git Bash / MSYS.
+- **Not supported:** cmd-only or PowerShell-only agents without `bash` on `PATH`.
 
 ## Agent and build-tool prerequisites
 

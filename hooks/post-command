@@ -5,6 +5,11 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=lib/shared.bash
 . "$DIR/../lib/shared.bash"
+
+# Git Bash on Windows: avoid MSYS path conversion breaking plugin paths and URLs.
+if is_windows; then
+  export MSYS_NO_PATHCONV=1
+fi
 # shellcheck source=lib/endorctl.bash
 . "$DIR/../lib/endorctl.bash"
 # shellcheck source=lib/validate.bash

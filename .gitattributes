@@ -4,4 +4,6 @@
 *.sh text eol=lf
 *.bats text eol=lf
 hooks/* text eol=lf
+hooks/*.bat text eol=crlf
+hooks/*.ps1 text eol=crlf
 lib/* text eol=lf
