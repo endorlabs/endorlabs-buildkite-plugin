@@ -628,8 +628,12 @@ function resolve_effective_exit_code() {
     effective_exit=0
   fi
   if [[ "$effective_exit" -ne 0 && "${ENDOR_PLUGIN_SOFT_FAIL:-false}" == "true" ]]; then
-    log_warn "endorlabs plugin: soft_fail=true, continuing despite endorctl exit ${raw_exit}"
-    effective_exit=0
+    if [[ "$raw_exit" -eq 128 && "${ENDOR_PLUGIN_FAIL_ON_POLICY:-true}" == "true" ]]; then
+      : # policy block (exit 128): soft_fail does not override fail_on_policy
+    else
+      log_warn "endorlabs plugin: soft_fail=true, continuing despite endorctl exit ${raw_exit}"
+      effective_exit=0
+    fi
   fi
 
   echo "$effective_exit"

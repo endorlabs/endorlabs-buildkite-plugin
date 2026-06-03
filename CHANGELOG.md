@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.3] - 2026-06-03
+
+### Fixed
+
+- **Policy exit precedence:** `soft_fail: true` no longer converts endorctl exit **128**
+  (blocking admission policy) to a successful step when `fail_on_policy` is true (default).
+  Use `fail_on_policy: false` on informational jobs to ignore policy blocks.
+
+### Added
+
+- BATS coverage (72 tests): credential argv invariants, `ENDOR_TOKEN` unset in API-key mode,
+  pre-exported `ENDOR_API_CREDENTIALS_*`, `soft_fail` vs exit 128, annotate/upload edge cases,
+  pinned endorctl install with checksum, `BUILDKITE_ENV_FILE` / MSYS / Windows wrapper contracts.
+
+### Changed
+
+- **Documentation:** single customer guide [`docs/setup.md`](docs/setup.md); slim
+  [`README.md`](README.md) (options live in [`plugin.yml`](plugin.yml)).
+- Removed redundant docs: `docs/getting-started.md`, `docs/customer-buildkite-setup.md`,
+  `docs/release-checklist.md`; empty `scripts/validation/` directory.
+- Maintainer release steps moved to [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+### Documentation
+
+- Policy / `soft_fail` / `fail_on_policy` precedence table in
+  [`docs/troubleshooting.md`](docs/troubleshooting.md); `plugin.yml` and [`SECURITY.md`](SECURITY.md)
+  updated to match.
+
 ## [0.1.2] - 2026-06-03
 
 ### Added
@@ -30,7 +58,7 @@ All notable changes to this project are documented here.
 ### Documentation
 
 - Agent and cluster build-tool prerequisites
-  ([docs/customer-buildkite-setup.md](docs/customer-buildkite-setup.md) §2).
+  ([docs/setup.md](docs/setup.md) §2).
 
 ## [0.1.0] - 2026-06-02
 
@@ -46,6 +74,6 @@ Initial public release.
 
 ### Documentation
 
-- Customer setup: [docs/customer-buildkite-setup.md](docs/customer-buildkite-setup.md)
+- Customer setup: [docs/setup.md](docs/setup.md)
 - Pipeline examples: [docs/examples.md](docs/examples.md)
 - Reference build: [repro-sandbox](https://github.com/endorlabs/repro-sandbox)

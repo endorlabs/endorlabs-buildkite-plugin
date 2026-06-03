@@ -1,7 +1,6 @@
 # Troubleshooting
 
-Onboarding path: [getting-started.md](getting-started.md). Setup details:
-[customer-buildkite-setup.md](customer-buildkite-setup.md).
+Setup: [setup.md](setup.md).
 
 ## Scan outputs and secrets
 
@@ -47,7 +46,7 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   scripts do not reach the plugin `post-command` hook unless you append to
   `BUILDKITE_ENV_FILE`, run tools in the step shell without a subshell, or bake them
   into the cluster agent image. See
-  [customer-buildkite-setup.md §2](customer-buildkite-setup.md#2-agent-and-cluster-build-tool-prerequisites).
+  [setup.md §2](setup.md#2-agent-and-cluster-build-tool-prerequisites).
 - **This plugin does not install Bazel, Node, Maven, or Docker** — only `endorctl`
   (unless `endorctl_skip_install: true`). The `post-command` hook sources
   `BUILDKITE_ENV_FILE` when present so `PATH` from your step scripts is visible to
@@ -59,7 +58,7 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   — you used a remote `https://github.com/...git#ref` plugin key. The job’s GitHub
   credentials can read your app repo but not the plugin org. **Vendor** the plugin under
   `.buildkite/vendor/endorlabs-buildkite-plugin/` instead (see
-  [customer-buildkite-setup.md](customer-buildkite-setup.md)).
+  [setup.md](setup.md)).
 - **`endorlabs#v0.1.0` clones `buildkite-plugins/endorlabs-buildkite-plugin`**
   — Buildkite’s plugin shorthand points at the [plugin directory](https://buildkite.com/docs/pipelines/integrations/plugins/writing#step-2-add-the-plugin-to-your-pipeline)
   mirror until your release is synced. For the **`endorlabs/endorlabs-buildkite-plugin`**
@@ -90,10 +89,17 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
 
 ## Policy exits, soft fail, and fail_on_policy
 
-- **`soft_fail: true`** — the plugin exits 0 even when endorctl returns
-  non-zero (useful for informational scans).
-- **`fail_on_policy: false`** — policy admission failure (exit `128`) is treated
-  as success; other non-zero exits still fail the step unless `soft_fail` is set.
+Endorctl exit **128** is a blocking admission policy failure ([exit codes](https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes)).
+
+| `fail_on_policy` | `soft_fail` | Exit 128 | Other non-zero |
+|------------------|-------------|----------|----------------|
+| `true` (default) | `false` (default) | Step fails | Step fails |
+| `false` | `false` | Step passes | Step fails |
+| `true` | `true` | Step fails | Step passes |
+| `false` | `true` | Step passes | Step passes |
+
+- **`fail_on_policy: false`** — only way to treat exit `128` as success on informational jobs.
+- **`soft_fail: true`** — passes the step on other non-zero exits; does **not** bypass exit `128` when `fail_on_policy` is true.
 - **`exit_on_policy_warning: true`** — endorctl exit `129` fails the step.
 
 ## Artifact sign and verify

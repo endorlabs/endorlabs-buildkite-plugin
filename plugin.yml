@@ -148,9 +148,14 @@ configuration:
     soft_fail:
       type: boolean
       default: false
+      description: >-
+        When true, convert non-zero endorctl exits to step success except exit 128
+        while fail_on_policy is true (policy blocks still fail the step).
     fail_on_policy:
       type: boolean
       default: true
+      description: >-
+        When false, treat endorctl exit 128 (blocking admission policy) as success.
     upload_artifacts:
       type: boolean
       default: false

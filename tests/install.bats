@@ -81,6 +81,35 @@ teardown() {
   assert_output --partial "fake-endorctl invoked: scan --namespace=demo"
 }
 
+@test "install uses PATH from BUILDKITE_ENV_FILE before appending install dir" {
+  export BUILDKITE_ENV_FILE="${BATS_TEST_TMPDIR}/install-step.env"
+  echo "PATH=${BATS_TEST_TMPDIR}/pre:${PATH}" >"${BUILDKITE_ENV_FILE}"
+
+  stub curl \
+    "-fsSL https://api.endorlabs.com/meta/version : cat '${INSTALL_FIXTURE_DIR}/version.json'" \
+    "-fsSL -o * * : cp '${INSTALL_FIXTURE_DIR}/endorctl' \"\$3\""
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "Downloading endorctl 9.9.9"
+  assert_output --partial "fake-endorctl invoked: scan --namespace=demo"
+}
+
+@test "installs pinned endorctl when version and checksum match" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ENDORCTL_VERSION=9.9.9
+  export BUILDKITE_PLUGIN_ENDORLABS_ENDORCTL_CHECKSUM="${INSTALL_FIXTURE_HASH}"
+
+  stub curl \
+    "-fsSL -o * * : cp '${INSTALL_FIXTURE_DIR}/endorctl' \"\$3\""
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "Downloading endorctl 9.9.9"
+  assert_output --partial "fake-endorctl invoked: scan --namespace=demo"
+}
+
 @test "rejects download when sha256 does not match the published checksum" {
   # Pin a wrong checksum so verification fails after download.
   export BUILDKITE_PLUGIN_ENDORLABS_ENDORCTL_VERSION=9.9.9

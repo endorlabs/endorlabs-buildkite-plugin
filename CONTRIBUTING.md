@@ -51,6 +51,12 @@ stubbed credentials only.
 Real `endorctl` scans against Endor Labs run in [repro-sandbox](https://github.com/endorlabs/repro-sandbox)
 with a vendored copy of this plugin and Buildkite cluster secrets — not in this repo's PR CI.
 
+## Releasing (maintainers)
+
+1. `docker compose run --rm tests`
+2. Sync vendored copy into [repro-sandbox](https://github.com/endorlabs/repro-sandbox); confirm default pipeline build is green
+3. Tag release; update [CHANGELOG.md](CHANGELOG.md)
+
 ## Pull requests
 
 - Keep changes focused; extend BATS when behaviour changes.

@@ -521,16 +521,125 @@ teardown() {
 }
 
 @test "configure_auth exports ENDOR_API_CREDENTIALS_KEY without echoing secret values" {
-  # Run a single scan and capture combined output. Secret values must never
-  # appear in plugin output (they are exported, not passed as CLI args).
+  # Credentials are exported, not passed as CLI args.
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo 'ran scan'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo \"\$*\""
 
   run "$PWD"/hooks/post-command
 
   assert_success
   refute_output --partial "kkkkkkkk"
   refute_output --partial "ssssssss"
+  refute_output --partial "--api-key"
+  refute_output --partial "--api-secret"
+  refute_output --partial "--token"
+}
+
+@test "configure_auth unsets ENDOR_TOKEN when using API key mode" {
+  export ENDOR_TOKEN=conflict-bearer-token
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo ok"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  refute_output --partial "conflict-bearer-token"
+}
+
+@test "pre-exported ENDOR_API_CREDENTIALS_* works without api_key_env" {
+  unset BUILDKITE_PLUGIN_ENDORLABS_API_KEY_ENV
+  unset BUILDKITE_PLUGIN_ENDORLABS_API_SECRET_ENV
+  unset FAKE_KEY
+  unset FAKE_SECRET
+  export ENDOR_API_CREDENTIALS_KEY=kkkkkkkk
+  export ENDOR_API_CREDENTIALS_SECRET=ssssssss
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo pre-exported-ok"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "pre-exported-ok"
+}
+
+@test "soft_fail=true does not soften policy exit 128 when fail_on_policy is true" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SOFT_FAIL=true
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : exit 128"
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  refute_output --partial "soft_fail=true"
+}
+
+@test "annotate=true uses error style for policy exit 128" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
+  export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="${BATS_TEST_TMPDIR}/endor-out.json"
+  echo '{"summary":{"findings":{"total":1}}}' >"${BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE}"
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : exit 128"
+  stub buildkite-agent \
+    "annotate * --style error --context endorlabs-scan : echo 'policy annotate'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "policy annotate"
+}
+
+@test "annotate=true warns and continues when buildkite-agent is missing" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo scan-ok"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "scan-ok"
+  assert_output --partial "buildkite-agent is not available; skipping annotation"
+}
+
+@test "upload_artifacts warns when artifact path is missing" {
+  export BUILDKITE_PLUGIN_ENDORLABS_UPLOAD_ARTIFACTS=true
+  export BUILDKITE_PLUGIN_ENDORLABS_ARTIFACT_PATHS="${BATS_TEST_TMPDIR}/missing-artifact.json"
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo scan-ok"
+  stub buildkite-agent \
+    "artifact upload * : echo should-not-upload"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "artifact path not found"
+  assert_output --partial "scan-ok"
+  refute_output --partial "should-not-upload"
+}
+
+@test "fails when no scan kind is enabled" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "at least one scan kind must be enabled"
+}
+
+@test "fails when API key is set without secret" {
+  unset BUILDKITE_PLUGIN_ENDORLABS_API_SECRET_ENV
+  unset FAKE_SECRET
+  export FAKE_KEY=kkkkkkkk
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "api key auth requires both key and secret"
 }
 
 @test "container scan runs endorctl container scan with mapped flags" {
@@ -643,6 +752,31 @@ teardown() {
 
   assert_success
   assert_output --partial "fail_on_policy=false"
+}
+
+@test "soft_fail=true converts non-policy endorctl exit to success" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SOFT_FAIL=true
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : exit 4"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "soft_fail=true"
+}
+
+@test "post-command sources BUILDKITE_ENV_FILE before running scan" {
+  export BUILDKITE_ENV_FILE="${BATS_TEST_TMPDIR}/bk-step.env"
+  echo "CUSTOM_PLUGIN_ENV_MARKER=from-step" >"${BUILDKITE_ENV_FILE}"
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo env=\${CUSTOM_PLUGIN_ENV_MARKER:-missing}"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "env=from-step"
 }
 
 @test "upload_artifacts uploads output_file when enabled" {

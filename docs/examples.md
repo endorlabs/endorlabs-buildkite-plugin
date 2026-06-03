@@ -6,13 +6,13 @@ applicable (`namespace`, scan toggles, PR options, container, sign/verify).
 See [`plugin.yml`](../plugin.yml) for the full schema.
 
 **Recommended:** vendored plugin path + Buildkite cluster secrets (see
-[customer-buildkite-setup.md](customer-buildkite-setup.md)). For the public git plugin,
+[setup.md](setup.md)). For the public git plugin,
 use the full GitHub URL with release tag v0.1.2 (see [troubleshooting.md](troubleshooting.md)
 for shorthand vs directory mirror).
 
 ## Buildkite: cluster secrets + vendored plugin
 
-See [getting-started.md](getting-started.md) for the full customer path. Minimal YAML:
+See [setup.md](setup.md). Minimal YAML:
 
 ```yaml
 secrets:
@@ -50,7 +50,7 @@ steps:
 The plugin requires API credentials to be present on the agent under
 the env-var names you pass in `api_key_env` / `api_secret_env`. On
 Buildkite, use cluster secrets and a pipeline `secrets:` block — see
-[customer-buildkite-setup.md](customer-buildkite-setup.md). Never commit
+[setup.md](setup.md). Never commit
 credential values to your pipeline file.
 
 ## Pin endorctl version
@@ -162,7 +162,7 @@ steps:
 Install **Bazelisk + JDK** on the Buildkite cluster agent (or bootstrap in `command`);
 run `bazel build` for your targets before the plugin hook. The plugin passes
 `--use-bazel` and target flags to `endorctl` but does not install Bazel — see
-[customer-buildkite-setup.md §2–§6](customer-buildkite-setup.md#2-agent-and-cluster-build-tool-prerequisites).
+[setup.md §2–§6](setup.md#2-agent-and-cluster-build-tool-prerequisites).
 
 For Bazel target selection, aspects, and layered scan examples, see
 [repro-sandbox](https://github.com/endorlabs/repro-sandbox) (`buildkite-ensure-build-tools.sh`,
@@ -367,6 +367,7 @@ steps:
           output_file: "endor-output.json"
           sarif_file: "endor.sarif"
           annotate: true
+          # Informational job: fail_on_policy false ignores exit 128; soft_fail alone does not.
           fail_on_policy: false
           soft_fail: true
           upload_artifacts: true

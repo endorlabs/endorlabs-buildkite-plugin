@@ -19,6 +19,8 @@ rather than opening a public issue with exploit details.
   printed in plugin logs.
 - Do not set `ENDOR_TOKEN` on the agent when using API-key mode; conflicting auth
   causes endorctl exit code 4.
+- `soft_fail: true` does not bypass policy exit `128` when `fail_on_policy` is
+  true (default); use `fail_on_policy: false` only on non-gating jobs.
 
 ## Scan outputs and artifacts
 
