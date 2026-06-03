@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Richer Buildkite annotations when `annotate: true`: severity breakdown, HTML table of
+  top findings (no code snippets), and link to `output_file` JSON artifact.
+- `annotate_scope` (`build` | `job`) and `annotate_findings_limit` plugin options.
+
 ## [0.1.4] - 2026-06-03
 
 ### Fixed

@@ -72,6 +72,10 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
 
 - **`annotate: true` has no effect locally** — `buildkite-agent annotate` needs a real
   Buildkite job and agent session token. Local Docker smoke logs a warning and continues.
+- **“No job annotations” in the job drawer** — the plugin defaults to `annotate_scope: build`
+  (build-level Annotations tab). Use `annotate_scope: job` for per-step job annotations
+  (requires buildkite-agent v3.112+). With `output_file` set, annotations include a severity
+  summary, a top-N findings table (no code snippets), and a link to the JSON artifact.
 - **Only the last step’s annotation appears** when several steps use `annotate: true`
   with the default context (`endorlabs-scan`). Set a unique `annotate_context` per step
   (for example `endorlabs-bk-filesystem`, `endorlabs-bk-bazel`).

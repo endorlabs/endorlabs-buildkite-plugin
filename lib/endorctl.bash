@@ -80,6 +80,8 @@ function configure_endorctl() {
   ENDOR_PLUGIN_GCP_SERVICE_ACCOUNT="$(plugin_read_config GCP_SERVICE_ACCOUNT)"
   ENDOR_PLUGIN_ANNOTATE="$(plugin_read_config ANNOTATE "false")"
   ENDOR_PLUGIN_ANNOTATE_CONTEXT="$(plugin_read_config ANNOTATE_CONTEXT)"
+  ENDOR_PLUGIN_ANNOTATE_SCOPE="$(plugin_read_config ANNOTATE_SCOPE "build")"
+  ENDOR_PLUGIN_ANNOTATE_FINDINGS_LIMIT="$(plugin_read_config ANNOTATE_FINDINGS_LIMIT "15")"
   ENDOR_PLUGIN_PR="$(plugin_read_config PR)"
   ENDOR_PLUGIN_PR_BASELINE="$(plugin_read_config PR_BASELINE)"
   ENDOR_PLUGIN_PR_INCREMENTAL="$(plugin_read_config PR_INCREMENTAL "false")"
@@ -689,9 +691,114 @@ function _read_scan_finding_count() {
 
   jq -r '
     .summary.findings.total // .findings.total // .summary.total // .total
+    // (if (.all_findings | type == "array") then (.all_findings | length) else empty end)
     // (if (.runs | type == "array") then ((.runs | map(.results | length)) | add) else empty end)
     // empty
   ' "$source_file" 2>/dev/null | awk 'NF { print; exit }'
+}
+
+function _level_display_name() {
+  local raw="$1"
+  raw="${raw#FINDING_LEVEL_}"
+  raw="${raw//_/ }"
+  if [[ -z "$raw" ]]; then
+    echo "Unknown"
+    return 0
+  fi
+  local first="${raw:0:1}"
+  local rest="${raw:1}"
+  rest="${rest,,}"
+  echo "${first^^}${rest}"
+}
+
+function _build_findings_annotation_html() {
+  local source_file="$1"
+  local limit="$2"
+  [[ -n "$source_file" && -f "$source_file" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+
+  local has_findings
+  has_findings="$(jq -r 'if (.all_findings | type) == "array" and (.all_findings | length) > 0 then "yes" else empty end' \
+    "$source_file" 2>/dev/null || true)"
+  [[ "$has_findings" == "yes" ]] || return 0
+
+  local severity_html=""
+  local severity_line
+  while IFS=$'\t' read -r level count; do
+    [[ -n "$level" && -n "$count" ]] || continue
+    severity_html="${severity_html}<li>$(_escape_html "$(_level_display_name "$level")"): $(_escape_html "$count")</li>"
+  done < <(jq -r '
+    [.all_findings[]? | .spec.level // "FINDING_LEVEL_UNKNOWN"]
+    | group_by(.)
+    | map("\(.[0])\t\(length)")
+    | .[]
+  ' "$source_file" 2>/dev/null)
+
+  if [[ -n "$severity_html" ]]; then
+    echo "<p><strong>By severity</strong></p><ul>${severity_html}</ul>"
+  fi
+
+  if [[ -z "$limit" || "$limit" -le 0 ]]; then
+    return 0
+  fi
+
+  local table_rows=""
+  local row level title target
+  while IFS=$'\t' read -r level title target; do
+    [[ -n "$level" ]] || continue
+    table_rows="${table_rows}<tr><td>$(_escape_html "$(_level_display_name "$level")")</td>"
+    table_rows="${table_rows}<td>$(_escape_html "$title")</td>"
+    table_rows="${table_rows}<td>$(_escape_html "$target")</td></tr>"
+  done < <(jq -r --argjson limit "$limit" '
+    def rank($l):
+      if ($l | test("CRITICAL")) then 0
+      elif ($l | test("HIGH")) then 1
+      elif ($l | test("MEDIUM")) then 2
+      elif ($l | test("LOW")) then 3
+      else 4 end;
+    [.all_findings[]?
+      | {
+          level: (.spec.level // "FINDING_LEVEL_UNKNOWN"),
+          title: (
+            (.meta.description // .meta.name // "Finding")
+            | gsub("\\s+"; " ")
+            | if length > 120 then .[0:117] + "…" else . end
+          ),
+          target: (
+            .spec.target_dependency_name
+            // .spec.target_dependency_package_name
+            // (.spec.dependency_file_paths[0] // empty)
+            // (.meta.parent_kind // "—")
+          )
+        }
+    ]
+    | sort_by(rank(.level))
+    | .[0:$limit][]
+    | [.level, .title, .target]
+    | @tsv
+  ' "$source_file" 2>/dev/null)
+
+  if [[ -z "$table_rows" ]]; then
+    return 0
+  fi
+
+  local total listed
+  total="$(jq -r '(.all_findings | length) // 0' "$source_file" 2>/dev/null)"
+  listed="$limit"
+  if [[ -n "$total" && "$total" -gt "$limit" ]]; then
+    echo "<p><strong>Top ${limit} of ${total} findings</strong> (full list in JSON artifact)</p>"
+  else
+    echo "<p><strong>Findings</strong></p>"
+  fi
+  echo "<table><thead><tr><th>Severity</th><th>Description</th><th>Target</th></tr></thead><tbody>${table_rows}</tbody></table>"
+}
+
+function _annotate_artifact_link_html() {
+  local path="${ENDOR_PLUGIN_OUTPUT_FILE:-}"
+  [[ -n "$path" && -f "$path" ]] || return 0
+  local escaped_path
+  escaped_path="$(_escape_html "$path")"
+  echo "<p><a href=\"artifact://${escaped_path}\">Download full scan JSON</a></p>"
 }
 
 function annotate_scan() {
@@ -775,9 +882,34 @@ function annotate_scan() {
     details_html="${details_html}<p><strong>Tags:</strong> $(_escape_html "$ENDOR_PLUGIN_TAGS")</p>"
   fi
 
+  local findings_source=""
+  if [[ -n "${ENDOR_PLUGIN_CAPTURE_FILE:-}" && -f "${ENDOR_PLUGIN_CAPTURE_FILE}" ]]; then
+    findings_source="${ENDOR_PLUGIN_CAPTURE_FILE}"
+  elif [[ -n "${ENDOR_PLUGIN_OUTPUT_FILE:-}" && -f "${ENDOR_PLUGIN_OUTPUT_FILE}" ]]; then
+    findings_source="${ENDOR_PLUGIN_OUTPUT_FILE}"
+  fi
+
+  local findings_html=""
+  if [[ -n "$findings_source" ]]; then
+    findings_html="$(_build_findings_annotation_html "$findings_source" "${ENDOR_PLUGIN_ANNOTATE_FINDINGS_LIMIT:-15}")"
+    if [[ -n "$findings_html" ]]; then
+      details_html="${details_html}${findings_html}"
+    fi
+    local artifact_link
+    artifact_link="$(_annotate_artifact_link_html)"
+    if [[ -n "$artifact_link" ]]; then
+      details_html="${details_html}${artifact_link}"
+    fi
+  fi
+
   local annotation="<h3>Endor Labs ${mode_label}</h3><p>${escaped_message}</p>${details_html}"
-  log_focus ":endorlabs: Publishing Buildkite annotation (context=${annotate_context})"
-  if ! buildkite-agent annotate "$annotation" --style "$style" --context "$annotate_context"; then
+  local -a annotate_args=(annotate "$annotation" --style "$style" --context "$annotate_context")
+  if [[ "${ENDOR_PLUGIN_ANNOTATE_SCOPE:-build}" == "job" ]]; then
+    annotate_args+=(--scope job)
+  fi
+
+  log_focus ":endorlabs: Publishing Buildkite annotation (context=${annotate_context}, scope=${ENDOR_PLUGIN_ANNOTATE_SCOPE:-build})"
+  if ! buildkite-agent "${annotate_args[@]}"; then
     log_warn "endorlabs plugin: buildkite-agent annotate failed (missing agent token or not in a Buildkite job?); continuing"
   fi
 

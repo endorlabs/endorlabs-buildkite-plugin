@@ -145,6 +145,20 @@ configuration:
         when one build runs multiple plugin invocations (layered scans). When
         omitted, context is derived from mode (endorlabs-scan, endorlabs-container,
         endorlabs-sign, endorlabs-verify).
+    annotate_scope:
+      type: string
+      enum: [ "build", "job" ]
+      default: build
+      description: >-
+        Where the annotation appears in the Buildkite UI. Use job to show findings
+        on the step job drawer (requires buildkite-agent v3.112+). Default build
+        shows annotations on the build page.
+    annotate_findings_limit:
+      type: integer
+      default: 15
+      description: >-
+        Maximum findings rows in the annotation HTML table (0 = severity counts
+        only). Requires jq and JSON scan output. Does not include code snippets.
     soft_fail:
       type: boolean
       default: false

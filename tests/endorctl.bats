@@ -504,6 +504,41 @@ teardown() {
   assert_output --partial "annotation sent"
 }
 
+@test "findings annotation html helper renders severity and table" {
+  # shellcheck source=lib/shared.bash
+  source "$PWD/lib/shared.bash"
+  # shellcheck source=lib/endorctl.bash
+  source "$PWD/lib/endorctl.bash"
+
+  local json="${BATS_TEST_TMPDIR}/findings.json"
+  cat >"${json}" <<'EOF'
+{"all_findings":[{"meta":{"description":"High vuln in pyjwt"},"spec":{"level":"FINDING_LEVEL_HIGH","target_dependency_name":"pyjwt"}}]}
+EOF
+
+  run _build_findings_annotation_html "${json}" 5
+
+  assert_success
+  assert_output --partial "By severity"
+  assert_output --partial "High vuln in pyjwt"
+  assert_output --partial "<table>"
+}
+
+@test "annotate_scope=job passes --scope job to buildkite-agent" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE_SCOPE=job
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":1}}}'"
+  stub buildkite-agent \
+    "annotate * --style success --context endorlabs-scan --scope job : echo 'job annotation'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "job annotation"
+  unstub buildkite-agent
+}
+
 @test "api, scan_path, tags, sarif_file and exit_on_policy_warning all surface as flags" {
   export BUILDKITE_PLUGIN_ENDORLABS_API=https://staging.api.endorlabs.com
   export BUILDKITE_PLUGIN_ENDORLABS_SCAN_PATH=services/api
