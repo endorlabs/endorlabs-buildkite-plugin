@@ -63,7 +63,7 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   — Buildkite’s plugin shorthand points at the [plugin directory](https://buildkite.com/docs/pipelines/integrations/plugins/writing#step-2-add-the-plugin-to-your-pipeline)
   mirror until your release is synced. For the **`endorlabs/endorlabs-buildkite-plugin`**
   GitHub repo, use a single full URL:
-  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.2`
+  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.4`
 - **Build failed but you expected only scan results** — `post-command` runs after your
   `command`. If Bazel/make fails, the step is red even when the plugin runs. Fix the
   build, or split scan into a separate step that depends on a successful build.

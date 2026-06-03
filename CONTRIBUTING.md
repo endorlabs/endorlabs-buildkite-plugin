@@ -29,7 +29,7 @@ On Windows, ensure `hooks/`, `lib/`, and `tests/` use LF line endings (see `.git
 
 Pull requests and pushes to `main` run [.github/workflows/ci.yml](.github/workflows/ci.yml):
 
-1. **shellcheck** on `hooks/` and `lib/`
+1. **shellcheck** on `hooks/post-command` and `lib/*.bash` (not Windows `.bat`/`.ps1` wrappers)
 2. **buildkite/plugin-linter** CLI — validates `plugin.yml` and `docs/examples.md` (`id: endorlabs`)
 3. **BATS** via `docker compose run --rm tests` (image digest in [docker-compose.yml](docker-compose.yml))
 
@@ -51,11 +51,21 @@ stubbed credentials only.
 Real `endorctl` scans against Endor Labs run in [repro-sandbox](https://github.com/endorlabs/repro-sandbox)
 with a vendored copy of this plugin and Buildkite cluster secrets — not in this repo's PR CI.
 
+## Versioning
+
+Pre-**1.0** releases stay on **`v0.1.x`**: bump only the **patch** (`v0.1.5`, `v0.1.6`, …) for each customer-facing release. Do not tag `v0.2.0` or `v1.0.0` until a maintainer explicitly plans a minor or major (1.x) release.
+
 ## Releasing (maintainers)
 
 1. `docker compose run --rm tests`
-2. Sync vendored copy into [repro-sandbox](https://github.com/endorlabs/repro-sandbox); confirm default pipeline build is green
-3. Tag release; update [CHANGELOG.md](CHANGELOG.md)
+2. Update [CHANGELOG.md](CHANGELOG.md)
+3. Align version pins in [README.md](README.md), [docs/setup.md](docs/setup.md), [docs/troubleshooting.md](docs/troubleshooting.md), and [docs/examples.md](docs/examples.md) with the new tag (plugin-linter enforces this)
+4. `git tag v0.1.x` and push the tag; `gh release create v0.1.x --notes-file ...` (mark latest)
+5. Sync vendored copy into [repro-sandbox](https://github.com/endorlabs/repro-sandbox); confirm default pipeline build is green
+
+## Local agent guidance (maintainers)
+
+Gitignored: `AGENTS.md` (portable technical reference) and `.cursor/rules/` (machine paths, workflow, security). Not required to build the plugin.
 
 ## Pull requests
 
