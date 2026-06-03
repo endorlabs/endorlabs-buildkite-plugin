@@ -42,10 +42,10 @@ steps:
 
 Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh)
 and commit `.buildkite/vendor/endorlabs-buildkite-plugin/` plus `VENDOR_SOURCE.json`.
-After the repo is public, you may use `endorlabs#v0.1.1` once the
+After the repo is public, you may use `endorlabs#v0.1.2` once the
 [Buildkite plugins directory](https://buildkite.com/docs/integrations/buildkite-plugins)
 syncs, or use
-`https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.1` today.
+`https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.2` today.
 
 Demo pipeline: [repro-sandbox](https://github.com/endorlabs/repro-sandbox) on Buildkite.
 

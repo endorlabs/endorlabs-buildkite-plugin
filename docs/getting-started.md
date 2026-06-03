@@ -101,12 +101,12 @@ Policy blocking uses endorctl exit `128` by default (`fail_on_policy: true`).
 ## After `v0.1.0` is public
 
 When the [Buildkite plugins directory](https://buildkite.com/docs/integrations/buildkite-plugins)
-lists this plugin, you may use shorthand `endorlabs#v0.1.1`. Until then, use the full URL
+lists this plugin, you may use shorthand `endorlabs#v0.1.2`. Until then, use the full URL
 (documented in [troubleshooting.md](troubleshooting.md)):
 
 ```yaml
 plugins:
-  - https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.1:
+  - https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.2:
       namespace: "${ENDOR_NAMESPACE}"
       ...
 ```
