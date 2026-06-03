@@ -59,12 +59,21 @@ configuration:
       type: boolean
     use_bazel:
       type: boolean
+      description: >-
+        Enable Bazel-aware scan (--use-bazel). Requires bazel on the agent PATH
+        and a successful target prebuild in the step command; the plugin does not
+        install Bazel.
     bazel_include_targets:
       type: string
+      description: Comma-separated Bazel targets (--bazel-include-targets).
     bazel_exclude_targets:
       type: string
+      description: Comma-separated Bazel targets to exclude (--bazel-exclude-targets).
     bazel_targets_query:
       type: string
+      description: >-
+        Bazel query for target discovery (--bazel-targets-query). Mutually exclusive
+        with bazel_include_targets.
     scan_path:
       type: string
     project_name:

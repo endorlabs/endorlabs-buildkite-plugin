@@ -49,7 +49,55 @@ steps:
 The plugin reads the **names** you pass in `api_key_env` / `api_secret_env`; it
 never prints secret values.
 
-## 2. Plugin source — vendored (recommended)
+## 2. Agent and cluster build-tool prerequisites
+
+This plugin installs **endorctl** only (`bash` + `curl` in [`plugin.yml`](../plugin.yml)).
+It does **not** install Bazel, Node, Maven, Docker, or other build toolchains. That matches
+the [GitHub Action](https://github.com/endorlabs/github-action) model: install your build
+toolchain before the scan.
+
+| Responsibility | Examples |
+|----------------|----------|
+| **Cluster / agent image** | Bazelisk, JDK, Node/npm, Docker, `jq` (for annotation finding counts) |
+| **Pipeline `command`** | `make build`, `bazel build`, `npm ci` — must run **before** the plugin `post-command` hook |
+| **Cluster secrets** | `ENDOR_NAMESPACE`, API key + secret (not build tools) |
+
+### Same step: `command` then plugin hook
+
+Your step runs `command` first, then the plugin `post-command` hook. Anything
+`endorctl` invokes (`bazel`, `npm`, …) must be on **`PATH` when the hook runs**.
+
+If you install tools inside **`bash ./script.sh`** subshells, exports are **not**
+visible to the hook unless you persist them. Append to
+[`BUILDKITE_ENV_FILE`](https://buildkite.com/docs/pipelines/environment-variables#BUILDKITE_ENV_FILE)
+(the agent sources this before later hooks), or run installs in the step `command`
+without a subshell, or bake tools into the agent image.
+
+```yaml
+steps:
+  - label: ":bazel: Build and scan"
+    command: |
+      export PATH="${HOME}/.local/bin:${PATH}"
+      command -v bazel >/dev/null || curl -fsSL ... # install once on the image when possible
+      echo "PATH=${PATH}" >> "${BUILDKITE_ENV_FILE}"
+      bazel build //app/...
+    plugins:
+      - ./.buildkite/vendor/endorlabs-buildkite-plugin:
+          use_bazel: true
+          bazel_include_targets: "//app/..."
+```
+
+Working scripts: [repro-sandbox `buildkite-ensure-build-tools.sh`](https://github.com/endorlabs/repro-sandbox/blob/main/scripts/buildkite-ensure-build-tools.sh)
+(profiles `bazel`, `node`, `jq`).
+
+| Scan style | Typical tools on the agent |
+|------------|----------------------------|
+| `use_bazel: true` | `bazel` (Bazelisk), JDK, successful target prebuild |
+| Node / npm SCA (`scan_path` to a JS repo) | Node.js, npm or yarn per lockfile |
+| `scan_container: true` | Docker or pre-built image tar |
+| Default repo scan | Resolver for your stack (Maven, Gradle, Go, …) as endorctl expects |
+
+## 3. Plugin source — vendored (recommended)
 
 Copy the plugin into your repo (for example
 `.buildkite/vendor/endorlabs-buildkite-plugin/`) and pin provenance in
@@ -74,7 +122,7 @@ agents can clone that repo and you accept a second checkout per job — vendorin
 avoids cross-org clone failures. See [troubleshooting.md](troubleshooting.md) if
 you hit plugin checkout auth errors.
 
-## 3. Layered scans (multiple steps)
+## 4. Layered scans (multiple steps)
 
 Use a distinct `annotate_context` per step so annotations are not overwritten:
 
@@ -85,7 +133,7 @@ annotate_context: endorlabs-filesystem
 Use `fail_on_policy: false` only on informational or comparison jobs; keep
 `fail_on_policy: true` (default) on merge gates.
 
-## 4. Annotations and job artifacts
+## 5. Annotations and job artifacts
 
 ### Where outputs live (two places)
 
@@ -160,28 +208,33 @@ Create the directory in your step command if needed: `mkdir -p .local/scans`.
 Treat artifacts as sensitive (findings, paths); restrict retention and download
 access in Buildkite.
 
-## 5. Bazel + Buildkite YAML
+## 6. Bazel + Buildkite YAML
 
 Keep `#` and shell `${array[@]}` out of `pipeline.yml` — put Bazel query/build in
 a script (see repro-sandbox `scripts/buildkite-bazel-prebuild.sh`).
+
+With `use_bazel: true`, install **Bazelisk + JDK** on the cluster agent (or run
+`buildkite-ensure-build-tools.sh bazel` in `command` — see §2). Run `bazel build`
+for the targets you pass via `bazel_include_targets` / `bazel_targets_query` before
+the plugin hook.
 
 Ensure Java targets declare strict deps (for example Log4j `log4j-api` alongside
 `log4j-core`). A failed `command` can still run the plugin `post-command`, but
 `endorctl` Bazel/git scans are more reliable when the prebuild succeeds.
 
-## 6. AI-SAST and pull requests
+## 7. AI-SAST and pull requests
 
 If you pass `--ai-sast` (via `additional_args`) on a **PR build**, endorctl requires
 `--pr-incremental` when `--pr` is set. For a simple monitoring scan on every branch,
 set `pr: false` on the plugin step, or enable `pr_incremental: true` with baseline
 context — see [troubleshooting.md](troubleshooting.md).
 
-## 7. Working example
+## 8. Working example
 
 See [repro-sandbox](https://github.com/endorlabs/repro-sandbox) for a vendored
 plugin pipeline on Buildkite (default demo: Bazel-targeted scan).
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 See [troubleshooting.md](troubleshooting.md) for policy exits (`128` / `129`),
 plugin checkout, and annotation behaviour.

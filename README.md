@@ -46,6 +46,14 @@ After `v0.1.0` is public, you may use `endorlabs#v0.1.0` if agents can clone thi
 
 Demo pipeline: [repro-sandbox](https://github.com/endorlabs/repro-sandbox) on Buildkite.
 
+## Agent and build-tool prerequisites
+
+The plugin installs **endorctl** only. Bazel, Node, Docker, `jq`, and other
+toolchains must be on the cluster agent image or installed in the step **`command`**
+before the `post-command` hook (same model as the
+[GitHub Action](https://github.com/endorlabs/github-action) “install your build toolchain”
+step). Details: [customer-buildkite-setup.md §2](docs/customer-buildkite-setup.md#2-agent-and-cluster-build-tool-prerequisites).
+
 ## Configuration
 
 Schema is in [`plugin.yml`](plugin.yml); `additionalProperties: false`
@@ -92,10 +100,10 @@ means typos are rejected by the [buildkite/plugin-linter](https://github.com/bui
 | `runner_environment` | no | — | `--runner-environment=` | Runner environment label for signing metadata |
 | `phantom_dependencies` | no | `false` | `--phantom-dependencies=true` | Enable phantom dependency analysis |
 | `disable_code_snippet_storage` | no | `false` | `--disable-code-snippet-storage=true` | Disable code snippet storage for SAST findings (requires `scan_sast: true`) |
-| `use_bazel` | no | `false` | `--use-bazel=true` | Enable Bazel-aware scan mode |
+| `use_bazel` | no | `false` | `--use-bazel=true` | Bazel-aware scan; requires `bazel` on agent `PATH` and prebuild in `command` |
 | `bazel_include_targets` | no | — | `--bazel-include-targets=` | Comma-separated Bazel targets to include |
 | `bazel_exclude_targets` | no | — | `--bazel-exclude-targets=` | Comma-separated Bazel targets to exclude |
-| `bazel_targets_query` | no | — | `--bazel-targets-query=` | Bazel query used to discover targets |
+| `bazel_targets_query` | no | — | `--bazel-targets-query=` | Bazel query for discovery (mutually exclusive with `bazel_include_targets`) |
 | `scan_path` | no | repo root | `--path=` | Sub-directory to scan |
 | `endorctl_version` | no | latest from API | (install) | Pin a specific endorctl release |
 | `endorctl_checksum` | no\*\* | — | (install) | SHA-256 of the pinned binary (required when `endorctl_version` is set) |

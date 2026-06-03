@@ -159,9 +159,14 @@ steps:
 
 ## Bazel monorepos
 
+Install **Bazelisk + JDK** on the Buildkite cluster agent (or bootstrap in `command`);
+run `bazel build` for your targets before the plugin hook. The plugin passes
+`--use-bazel` and target flags to `endorctl` but does not install Bazel — see
+[customer-buildkite-setup.md §2–§6](customer-buildkite-setup.md#2-agent-and-cluster-build-tool-prerequisites).
+
 For Bazel target selection, aspects, and layered scan examples, see
-[repro-sandbox](https://github.com/endorlabs/repro-sandbox) (optional
-`pipeline.layered-scans.yml`). Core plugin options: `use_bazel`,
+[repro-sandbox](https://github.com/endorlabs/repro-sandbox) (`buildkite-ensure-build-tools.sh`,
+optional `pipeline.layered-scans.yml`). Core plugin options: `use_bazel`,
 `bazel_include_targets`, `bazel_exclude_targets`, and `bazel_targets_query`
 (omit `bazel_targets_query` when `--bazel-include-targets` is set in
 `additional_args`).

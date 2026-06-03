@@ -13,14 +13,15 @@ into an existing Buildkite pipeline. Product background:
 | API key + secret (CI) | Endor Labs → API credentials (not `ENDOR_TOKEN` on the same job) |
 | Buildkite pipeline with a `command` step | Your application repo |
 | Buildkite cluster (agent 3.106.0+ for `secrets:`) | Buildkite → Agents → Clusters |
+| Build tools on agents (`bazel`, Node, …) | Cluster image or step `command` — plugin installs **endorctl only** |
 
 ## Customer journey (recommended)
 
 ### 1. Read setup (5 minutes)
 
-[customer-buildkite-setup.md](customer-buildkite-setup.md) — cluster secrets, vendoring,
-annotations, artifacts. Skim [troubleshooting.md](troubleshooting.md) for PR/namespace
-pitfalls.
+[customer-buildkite-setup.md](customer-buildkite-setup.md) — cluster secrets, **build-tool
+prerequisites**, vendoring, annotations, artifacts. Skim [troubleshooting.md](troubleshooting.md)
+for PR/namespace pitfalls.
 
 ### 2. Vendor the plugin (one-time per repo)
 
@@ -51,6 +52,9 @@ Scope secrets to your pipeline (for example `pipeline_slug: my-app`).
 
 Your step **`command` runs first**; the plugin **`post-command`** installs
 `endorctl`, authenticates, and scans afterward.
+
+Install build tools (Bazel, Node, …) in the agent image or in `command` before the
+hook — see [customer-buildkite-setup.md §2](customer-buildkite-setup.md#2-agent-and-cluster-build-tool-prerequisites).
 
 ```yaml
 secrets:
@@ -90,7 +94,7 @@ On [buildkite.com](https://buildkite.com):
 1. Open the build → your scan step → **Log** — look for `:endorlabs: Running endorctl scan`.
 2. **Annotations** — context defaults to `endorlabs-scan` (or your `annotate_context`).
 3. **Artifacts** — if you set `output_file` / `sarif_file`, see
-   [customer-buildkite-setup.md §4](customer-buildkite-setup.md#4-annotations-and-job-artifacts).
+   [customer-buildkite-setup.md §5](customer-buildkite-setup.md#5-annotations-and-job-artifacts).
 
 Policy blocking uses endorctl exit `128` by default (`fail_on_policy: true`).
 
@@ -113,7 +117,7 @@ Vendoring remains valid for air-gapped or cross-org clone constraints.
 | Goal | Doc |
 |------|-----|
 | More YAML patterns (Bazel, secrets, SAST, PR) | [examples.md](examples.md) |
-| Secrets, artifacts, Bazel notes | [customer-buildkite-setup.md](customer-buildkite-setup.md) |
+| Secrets, build tools, artifacts, Bazel | [customer-buildkite-setup.md](customer-buildkite-setup.md) |
 | Failures (policy, clone, annotations) | [troubleshooting.md](troubleshooting.md) |
 | Full option list | [README.md](../README.md) + [plugin.yml](../plugin.yml) |
 | Working Buildkite demo | [repro-sandbox](https://github.com/endorlabs/repro-sandbox) |

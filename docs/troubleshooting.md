@@ -40,6 +40,17 @@ There is no first-class Buildkite OIDC flow in this plugin for SCM commenting.
 Provide a suitable PAT or bot token on the agent (for example via the
 Buildkite secrets plugin) and reference it with `scm_token_env`.
 
+## Build tools not visible to `endorctl` (Bazel / Node / …)
+
+- **Log shows `bazel: executable file not found` (or similar) after a successful prebuild**
+  — the step `command` often runs `bash ./script.sh` subshells. Exports from those
+  scripts do not reach the plugin `post-command` hook unless you append to
+  `BUILDKITE_ENV_FILE`, run tools in the step shell without a subshell, or bake them
+  into the cluster agent image. See
+  [customer-buildkite-setup.md §2](customer-buildkite-setup.md#2-agent-and-cluster-build-tool-prerequisites).
+- **This plugin does not install Bazel, Node, Maven, or Docker** — only `endorctl`
+  (unless `endorctl_skip_install: true`).
+
 ## Buildkite: vendored plugin (recommended)
 
 - **Plugin checkout / `Authentication failed` for `endorlabs-buildkite-plugin.git`**
