@@ -49,7 +49,9 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   into the cluster agent image. See
   [customer-buildkite-setup.md §2](customer-buildkite-setup.md#2-agent-and-cluster-build-tool-prerequisites).
 - **This plugin does not install Bazel, Node, Maven, or Docker** — only `endorctl`
-  (unless `endorctl_skip_install: true`).
+  (unless `endorctl_skip_install: true`). The `post-command` hook sources
+  `BUILDKITE_ENV_FILE` when present so `PATH` from your step scripts is visible to
+  `endorctl`.
 
 ## Buildkite: vendored plugin (recommended)
 

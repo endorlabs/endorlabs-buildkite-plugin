@@ -103,6 +103,20 @@ function is_macos() {
   [[ "$OSTYPE" =~ ^(darwin) ]]
 }
 
+# Load env vars written during the step command (e.g. PATH for bazel) before post-command.
+# Step scripts often run in bash subshells; customers append to BUILDKITE_ENV_FILE.
+function plugin_load_step_environment() {
+  if [[ -n "${BUILDKITE_ENV_FILE:-}" && -f "${BUILDKITE_ENV_FILE}" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "${BUILDKITE_ENV_FILE}"
+    set +a
+  fi
+  if [[ -n "${BUILDKITE_TOOL_DIR:-}" ]]; then
+    export PATH="${BUILDKITE_TOOL_DIR}:${PATH}"
+  fi
+}
+
 # True when Buildkite exposes a numeric pull request id (PR build).
 # Outside PR builds Buildkite sets BUILDKITE_PULL_REQUEST to the string "false".
 function bk_pull_request_is_numeric() {
