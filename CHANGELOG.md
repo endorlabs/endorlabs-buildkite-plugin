@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.1] - 2026-06-03
+
+### Fixed
+
+- `post-command` sources `BUILDKITE_ENV_FILE` (and `BUILDKITE_TOOL_DIR`) so build tools
+  installed in the step `command` are on `PATH` when `endorctl` runs.
+
+### Documentation
+
+- Agent and cluster build-tool prerequisites
+  ([docs/customer-buildkite-setup.md](docs/customer-buildkite-setup.md) §2).
+
 ## [0.1.0] - 2026-06-02
 
 Initial public release.
