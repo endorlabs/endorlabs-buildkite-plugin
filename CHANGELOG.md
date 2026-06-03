@@ -7,7 +7,8 @@ All notable changes to this project are documented here.
 ### Added
 
 - Richer Buildkite annotations when `annotate: true`: severity breakdown, HTML table with
-  reachability (Reachable / Potentially reachable / Not), finding title, and clickable
+  reachability (✅ / ⚠️ / ➖) and severity emojis (🔴 Critical, 🟥 High, 🟠 Medium, 🟡 Low),
+  finding title, and clickable
   `location_urls` or SAST `custom.location` links (file:line when `#L` present). No code
   snippets in annotations; full JSON via `artifact://` link.
 - `annotate_scope` (`build` | `job`) and `annotate_findings_limit` plugin options.

@@ -520,7 +520,8 @@ EOF
   assert_success
   assert_output --partial "By severity"
   assert_output --partial "High vuln in pyjwt"
-  assert_output --partial "Potentially reachable"
+  assert_output --partial "⚠️ Potentially reachable"
+  assert_output --partial "🟥 High"
   assert_output --partial "https://example.com/pyjwt"
   assert_output --partial "<table>"
 }

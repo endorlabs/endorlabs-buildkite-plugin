@@ -697,18 +697,40 @@ function _read_scan_finding_count() {
   ' "$source_file" 2>/dev/null | awk 'NF { print; exit }'
 }
 
+function _severity_emoji() {
+  local level_key="$1"
+  case "$level_key" in
+    *CRITICAL*) echo "🔴" ;; # dark red — Critical
+    *HIGH*) echo "🟥" ;;     # bright red — High
+    *MEDIUM*) echo "🟠" ;;   # orange — Medium
+    *LOW*) echo "🟡" ;;       # yellow — Low
+    *) echo "⚪" ;;
+  esac
+}
+
 function _level_display_name() {
   local raw="$1"
+  local emoji label
+  emoji="$(_severity_emoji "$raw")"
   raw="${raw#FINDING_LEVEL_}"
   raw="${raw//_/ }"
   if [[ -z "$raw" ]]; then
-    echo "Unknown"
+    echo "${emoji} Unknown"
     return 0
   fi
   local first="${raw:0:1}"
   local rest="${raw:1}"
   rest="${rest,,}"
-  echo "${first^^}${rest}"
+  label="${first^^}${rest}"
+  echo "${emoji} ${label}"
+}
+
+function _reachability_display() {
+  case "$1" in
+    Reachable) echo "✅ Reachable" ;;
+    "Potentially reachable") echo "⚠️ Potentially reachable" ;;
+    *) echo "➖ Not reachable" ;;
+  esac
 }
 
 function _build_findings_annotation_html() {
@@ -751,7 +773,7 @@ function _build_findings_annotation_html() {
       loc_cell="$(_escape_html "$detail")"
     fi
     table_rows="${table_rows}<tr>"
-    table_rows="${table_rows}<td>$(_escape_html "$reach")</td>"
+    table_rows="${table_rows}<td>$(_escape_html "$(_reachability_display "$reach")")</td>"
     table_rows="${table_rows}<td>$(_escape_html "$(_level_display_name "$level")")</td>"
     table_rows="${table_rows}<td>$(_escape_html "$title")</td>"
     table_rows="${table_rows}<td>${loc_cell}</td>"
