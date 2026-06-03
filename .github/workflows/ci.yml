@@ -31,9 +31,10 @@ jobs:
 
           shellcheck_bin="./shellcheck-${SHELLCHECK_VERSION}/shellcheck"
           "${shellcheck_bin}" --version
+          # Bash only — .bat/.ps1 are cmd/PowerShell wrappers, not shellcheck targets
           "${shellcheck_bin}" \
-            hooks/* \
-            lib/*
+            hooks/post-command \
+            lib/*.bash
 
   plugin-linter:
     name: Lint plugin.yml and examples

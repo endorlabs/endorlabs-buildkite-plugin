@@ -9,7 +9,7 @@ steps:
     plugins:
       shellcheck#415387ef211e65b77616308e8231ff4a7acd6935: # v1.4.0
         files:
-          - hooks/**
+          - hooks/post-command
           - lib/**
 
   - label: ":sparkles: Lint plugin.yml and examples"
