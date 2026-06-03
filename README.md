@@ -30,7 +30,7 @@ steps:
           annotate: true
 ```
 
-Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.2` (or `endorlabs#v0.1.2` after [directory sync](https://buildkite.com/docs/integrations/buildkite-plugins)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.4` (or `endorlabs#v0.1.4` after [directory sync](https://buildkite.com/docs/integrations/buildkite-plugins)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
 
 ## How it works
 
