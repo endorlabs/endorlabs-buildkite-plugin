@@ -317,6 +317,7 @@ function _json_get_checksum() {
 }
 
 function _append_global_auth_args() {
+  # shellcheck disable=SC2178 # nameref to caller array
   local -n args_ref="$1"
 
   if [[ -n "$ENDOR_PLUGIN_API" ]]; then
@@ -334,6 +335,7 @@ function _append_global_auth_args() {
 }
 
 function _append_common_logging_output_args() {
+  # shellcheck disable=SC2178 # nameref to caller array
   local -n args_ref="$1"
   args_ref+=("--output-type=${ENDOR_PLUGIN_OUTPUT_TYPE}")
   args_ref+=("--log-level=${ENDOR_PLUGIN_LOG_LEVEL}")
@@ -341,6 +343,7 @@ function _append_common_logging_output_args() {
 }
 
 function _append_additional_args() {
+  # shellcheck disable=SC2178 # nameref to caller array
   local -n args_ref="$1"
   if [[ -n "$ENDOR_PLUGIN_ADDITIONAL_ARGS" ]]; then
     # shellcheck disable=SC2206
