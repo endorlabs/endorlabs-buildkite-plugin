@@ -4,6 +4,8 @@ Configure [endorctl](https://docs.endorlabs.com/developers-api/cli/commands/scan
 
 **Official docs:** [Endor scan](https://docs.endorlabs.com/scan) · [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) · [Writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing)
 
+**Plugin docs:** [index](README.md) · [examples](examples.md) · [troubleshooting](troubleshooting.md)
+
 ## Quick start
 
 1. Create cluster secrets: `ENDOR_NAMESPACE`, `ENDOR_API_CREDENTIALS_KEY`, `ENDOR_API_CREDENTIALS_SECRET`.

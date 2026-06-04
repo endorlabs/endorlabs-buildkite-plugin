@@ -39,8 +39,8 @@ shellcheck-*/
 # BATS / maintainer scratch
 tests/tmp*.json
 
-# Generated annotation HTML preview (see .tmp/scripts/generate-annotation-mockup.bash)
-docs/mockups/annotation-preview.html
+# Legacy path — mockups live under .tmp/mockups/ (see docs/maintainers/local-tmp.md)
+docs/mockups/
 
 # Accidental local vendor copy (consumers use repro-sandbox sync script)
 .buildkite/vendor/

@@ -8,7 +8,7 @@ Buildkite plugin to run [endorctl](https://docs.endorlabs.com/developers-api/cli
 
 - **Endor Labs** — [scan](https://docs.endorlabs.com/scan), [exit codes](https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes)
 - **Buildkite** — [writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing), [cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets)
-- **This plugin** — [setup](docs/setup.md) · [examples](docs/examples.md) · [troubleshooting](docs/troubleshooting.md)
+- **This plugin** — [docs index](docs/README.md): [setup](docs/setup.md) · [examples](docs/examples.md) · [troubleshooting](docs/troubleshooting.md)
 
 ## Quick example (vendored plugin)
 
@@ -39,6 +39,14 @@ Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endo
 - **Credentials** — `api_key_env` / `api_secret_env` (or pre-exported `ENDOR_API_CREDENTIALS_*`); never passed as `--api-key` on the CLI. See [SECURITY.md](SECURITY.md).
 - **Build tools** — plugin installs endorctl only; put Bazel/Node/etc. on the agent or in `command`. See [docs/setup.md §2](docs/setup.md#2-agent-and-cluster-build-tool-prerequisites).
 - **Windows** — `post-command.bat` / `.ps1` delegate to Bash; requires Git Bash on the agent ([writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing)).
+
+## Annotations
+
+With `annotate: true` (and `jq` on the agent for JSON output), the plugin posts an HTML summary: severity counts, admission policy status, and a findings table filtered to the scan kinds enabled on that step. Use `annotate_scope: job` for per-step annotations in parallel scan pipelines.
+
+![Endor Labs dependency scan annotation in Buildkite — severity counts, policy status, and critical/high findings table](docs/images/buildkite-plugin-demo.png)
+
+Example from [repro-sandbox](https://github.com/endorlabs/repro-sandbox) (`dev` branch): parallel secrets, dependencies, SAST, and AI-SAST steps each with job-scoped annotations.
 
 ## Common options
 
