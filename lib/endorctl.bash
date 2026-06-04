@@ -990,7 +990,8 @@ function _annotation_table_row_html() {
     tags_cell="$(_escape_html "$badges")"
   fi
 
-  local row="<tr><td>$(_level_display_html "$level")</td><td>${title_html}</td>"
+  local row
+  row="<tr><td>$(_level_display_html "$level")</td><td>${title_html}</td>"
   if [[ "$mode" == "dependencies" ]]; then
     row="${row}<td>$(_escape_html "$package")</td>"
     row="${row}<td>$(_annotation_reachability_cell_html "$reach_dep" "$reach_fn")</td>"
@@ -1324,9 +1325,9 @@ function annotate_scan() {
     fi
   fi
 
-  local mode_icon
+  local mode_icon annotation
   mode_icon="$(_scan_mode_icon)"
-  local annotation="<h3>${mode_icon} Endor Labs $(_escape_html "$mode_label")</h3><p>${escaped_message}</p>${details_html}"
+  annotation="<h3>${mode_icon} Endor Labs $(_escape_html "$mode_label")</h3><p>${escaped_message}</p>${details_html}"
   local -a annotate_args=(annotate "$annotation" --style "$style" --context "$annotate_context")
   if [[ "${ENDOR_PLUGIN_ANNOTATE_SCOPE:-build}" == "job" ]]; then
     annotate_args+=(--scope job)
