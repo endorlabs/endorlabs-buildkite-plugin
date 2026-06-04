@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Richer Buildkite annotations when `annotate: true`: scan-kind icon in title, status-line
+  emojis by exit code, ✨ no findings / 📋 counts, 📊 blocking vs warning lists, severity
+  breakdown, HTML table with reachability (✅ / ⚠️ / ➖), colored ● severity, category icons,
+  up to two row badges (blocker, fix available, etc.), finding title, and clickable
+  `location_urls` or SAST `custom.location` links (file:line when `#L` present). No code
+  snippets in annotations; full JSON via `artifact://` link; ℹ️ hint when `jq` is missing.
+  Links to the Endor Labs app: branch/PR findings tab (non-dismissed filter), and
+  per-finding titles opening the findings drawer via `resourceDetail`.
+- `annotate_scope` (`build` | `job`) and `annotate_findings_limit` plugin options.
+
 ## [0.1.4] - 2026-06-03
 
 ### Fixed

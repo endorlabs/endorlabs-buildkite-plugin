@@ -48,7 +48,9 @@ Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endo
 | `scan_dependencies` | `true` | SCA |
 | `scan_secrets` / `scan_sast` | `false` | Enable per need |
 | `scan_container` | `false` | Requires `image` or `image_tar`; separate from repo scans |
-| `annotate` | `false` | Sanitized Buildkite annotation after scan |
+| `annotate` | `false` | HTML summary after scan (severity counts, top findings table, artifact link) |
+| `annotate_scope` | `build` | `job` shows annotation on the step job drawer (agent v3.112+) |
+| `annotate_findings_limit` | `-1` | `-1` = all critical/high in table; `N>0` adds up to N medium/low rows; `0` = counts only (needs `jq` + JSON output) |
 | `fail_on_policy` | `true` | Exit `128` fails the step |
 | `soft_fail` | `false` | Softens other exits; does not bypass `128` when `fail_on_policy` is true |
 | `mode` | `scan` | `sign` / `verify` for artifact signing |

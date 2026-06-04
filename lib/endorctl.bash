@@ -80,6 +80,8 @@ function configure_endorctl() {
   ENDOR_PLUGIN_GCP_SERVICE_ACCOUNT="$(plugin_read_config GCP_SERVICE_ACCOUNT)"
   ENDOR_PLUGIN_ANNOTATE="$(plugin_read_config ANNOTATE "false")"
   ENDOR_PLUGIN_ANNOTATE_CONTEXT="$(plugin_read_config ANNOTATE_CONTEXT)"
+  ENDOR_PLUGIN_ANNOTATE_SCOPE="$(plugin_read_config ANNOTATE_SCOPE "build")"
+  ENDOR_PLUGIN_ANNOTATE_FINDINGS_LIMIT="$(plugin_read_config ANNOTATE_FINDINGS_LIMIT "-1")"
   ENDOR_PLUGIN_PR="$(plugin_read_config PR)"
   ENDOR_PLUGIN_PR_BASELINE="$(plugin_read_config PR_BASELINE)"
   ENDOR_PLUGIN_PR_INCREMENTAL="$(plugin_read_config PR_INCREMENTAL "false")"
@@ -687,11 +689,547 @@ function _read_scan_finding_count() {
   [[ -n "$source_file" && -f "$source_file" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
 
+  local filtered
+  filtered="$(_count_filtered_findings "$source_file")"
+  if [[ -n "$filtered" ]]; then
+    echo "$filtered"
+    return 0
+  fi
+
   jq -r '
     .summary.findings.total // .findings.total // .summary.total // .total
+    // (if (.all_findings | type == "array") then (.all_findings | length) else empty end)
     // (if (.runs | type == "array") then ((.runs | map(.results | length)) | add) else empty end)
     // empty
   ' "$source_file" 2>/dev/null | awk 'NF { print; exit }'
+}
+
+function _annotation_link_html() {
+  local url="$1"
+  local text="$2"
+  # Buildkite annotations do not render <style> blocks (CSS appears as plain text).
+  # Inline teal reads on light UI; Buildkite dark mode inverts colors so this still contrasts.
+  echo "<a href=\"$(_escape_html "$url")\" style=\"color:#0d9488;text-decoration:underline\">$(_escape_html "$text")</a>"
+}
+
+function _severity_color() {
+  local level_key="$1"
+  case "$level_key" in
+    *CRITICAL*) echo "#991B1B" ;; # dark red
+    *HIGH*) echo "#DC2626" ;;       # bright red
+    *MEDIUM*) echo "#EA580C" ;;     # orange
+    *LOW*) echo "#CA8A04" ;;        # amber
+    *) echo "#6B7280" ;;
+  esac
+}
+
+function _level_label_from_raw() {
+  local raw="$1"
+  raw="${raw#FINDING_LEVEL_}"
+  raw="${raw//_/ }"
+  if [[ -z "$raw" ]]; then
+    echo "Unknown"
+    return 0
+  fi
+  local first="${raw:0:1}"
+  local rest="${raw:1}"
+  rest="${rest,,}"
+  echo "${first^^}${rest}"
+}
+
+function _level_display_html() {
+  local raw="$1"
+  local color label
+  color="$(_severity_color "$raw")"
+  label="$(_level_label_from_raw "$raw")"
+  echo "<span style=\"color:${color}\">$(_escape_html "$label")</span>"
+}
+
+function _scan_mode_icon() {
+  if [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
+    echo "✍️"
+  elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "verify" ]]; then
+    echo "✔️"
+  elif [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
+    echo "🐳"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SECRETS:-false}" == "true" ]]; then
+    echo "🔑"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]]; then
+    echo "📝"
+  elif [[ "${ENDOR_PLUGIN_SCAN_AI_MODELS:-false}" == "true" ]]; then
+    echo "🤖"
+  elif [[ "${ENDOR_PLUGIN_SCAN_TOOLS:-false}" == "true" ]]; then
+    echo "🔧"
+  elif [[ "${ENDOR_PLUGIN_SCAN_PACKAGE:-false}" == "true" ]]; then
+    echo "📦"
+  else
+    echo "📦"
+  fi
+}
+
+function _annotate_status_message() {
+  local scan_exit="${1:-0}"
+  case "$scan_exit" in
+    0) echo "Scan completed successfully." ;;
+    129) echo "⚠️ Scan completed with policy warnings (exit-on-policy-warning)." ;;
+    128) echo "🛑 Blocking admission policy failed." ;;
+    33) echo "🔒 Scan failed due to a license error." ;;
+    4) echo "🔑 Scan failed due to conflicting authentication methods." ;;
+    *) echo "❌ Scan failed (exit code ${scan_exit})." ;;
+  esac
+}
+
+function _endor_annotation_filter_json() {
+  local -a categories=()
+  local -a admission_patterns=()
+  local require_ai="false"
+  local exclude_ai="false"
+
+  if [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
+    categories+=(FINDING_CATEGORY_CONTAINER)
+    admission_patterns+=(Container)
+  elif [[ "${ENDOR_PLUGIN_SCAN_SECRETS:-false}" == "true" ]]; then
+    categories+=(FINDING_CATEGORY_SECRETS)
+    admission_patterns+=(Secret)
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]] \
+    && [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; then
+    categories+=(FINDING_CATEGORY_SAST)
+    require_ai="true"
+    admission_patterns+=(SAST)
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]]; then
+    categories+=(FINDING_CATEGORY_SAST)
+    exclude_ai="true"
+    admission_patterns+=(SAST)
+  elif [[ "${ENDOR_PLUGIN_SCAN_DEPENDENCIES:-false}" == "true" ]]; then
+    # SCA/vuln findings often also carry FINDING_CATEGORY_SECURITY (see tenant CSV exports).
+    categories+=(
+      FINDING_CATEGORY_VULNERABILITY
+      FINDING_CATEGORY_SCA
+      FINDING_CATEGORY_SECURITY
+      FINDING_CATEGORY_SUPPLY_CHAIN
+      FINDING_CATEGORY_OPERATIONAL
+      FINDING_CATEGORY_MALWARE
+      FINDING_CATEGORY_LICENSE_RISK
+    )
+    admission_patterns+=(Vulnerabilit SCA Dependenc Supply Security)
+  elif [[ "${ENDOR_PLUGIN_SCAN_TOOLS:-false}" == "true" ]]; then
+    categories+=(FINDING_CATEGORY_TOOLS)
+    admission_patterns+=(Tool)
+  elif [[ "${ENDOR_PLUGIN_SCAN_GITHUB_ACTIONS:-false}" == "true" ]]; then
+    categories+=(FINDING_CATEGORY_GHACTIONS)
+    admission_patterns+=(GitHub Action)
+  elif [[ "${ENDOR_PLUGIN_SCAN_AI_MODELS:-false}" == "true" ]]; then
+    categories+=(FINDING_CATEGORY_AI_MODELS)
+    admission_patterns+=(AI)
+  elif [[ "${ENDOR_PLUGIN_SCAN_PACKAGE:-false}" == "true" ]]; then
+    categories+=(FINDING_CATEGORY_VULNERABILITY FINDING_CATEGORY_SCA FINDING_CATEGORY_SUPPLY_CHAIN)
+    admission_patterns+=(Package)
+  fi
+
+  jq -nc \
+    --argjson categories "$(printf '%s\n' "${categories[@]}" | jq -R . | jq -s .)" \
+    --argjson admission_patterns "$(printf '%s\n' "${admission_patterns[@]}" | jq -R . | jq -s .)" \
+    --argjson require_ai "$require_ai" \
+    --argjson exclude_ai "$exclude_ai" \
+    '{categories: $categories, admission_patterns: $admission_patterns, require_ai: $require_ai, exclude_ai: $exclude_ai}'
+}
+
+function _endor_jq_with_filter() {
+  local -a jq_opts=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -r|-c|-e|-s|-S|-R|-n) jq_opts+=("$1"); shift ;;
+      --arg|--argjson|--rawfile|--slurpfile)
+        jq_opts+=("$1" "$2" "$3")
+        shift 3
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  local query="$1"
+  shift
+  local lib_dir="${BASH_SOURCE[0]%/*}"
+  local filter_json
+  filter_json="$(_endor_annotation_filter_json)"
+  jq "${jq_opts[@]}" --argjson filter "${filter_json}" -L "${lib_dir}" \
+    "include \"annotation-filter\"; ${query}" "$@"
+}
+
+function _endor_annotation_table_mode() {
+  if [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" || "${ENDOR_PLUGIN_MODE:-scan}" == "verify" ]]; then
+    echo "generic"
+  elif [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
+    echo "container"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SECRETS:-false}" == "true" ]]; then
+    echo "secrets"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]] \
+    && [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; then
+    echo "ai-sast"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]]; then
+    echo "sast"
+  elif [[ "${ENDOR_PLUGIN_SCAN_DEPENDENCIES:-false}" == "true" ]]; then
+    echo "dependencies"
+  elif [[ "${ENDOR_PLUGIN_SCAN_TOOLS:-false}" == "true" ]]; then
+    echo "tools"
+  elif [[ "${ENDOR_PLUGIN_SCAN_GITHUB_ACTIONS:-false}" == "true" ]]; then
+    echo "github_actions"
+  elif [[ "${ENDOR_PLUGIN_SCAN_AI_MODELS:-false}" == "true" ]]; then
+    echo "ai_models"
+  elif [[ "${ENDOR_PLUGIN_SCAN_PACKAGE:-false}" == "true" ]]; then
+    echo "package"
+  else
+    echo "generic"
+  fi
+}
+
+function _endor_jq_table_with_filter() {
+  local -a jq_opts=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -r|-c|-e|-s|-S|-R|-n) jq_opts+=("$1"); shift ;;
+      --arg|--argjson|--rawfile|--slurpfile)
+        jq_opts+=("$1" "$2" "$3")
+        shift 3
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  local query="$1"
+  shift
+  local lib_dir="${BASH_SOURCE[0]%/*}"
+  local filter_json
+  filter_json="$(_endor_annotation_filter_json)"
+  local table_mode
+  table_mode="$(_endor_annotation_table_mode)"
+  jq "${jq_opts[@]}" --argjson filter "${filter_json}" --arg table_mode "${table_mode}" \
+    -L "${lib_dir}" "include \"annotation-table\"; ${query}" "$@"
+}
+
+function _annotation_reachability_cell_html() {
+  local dep="$1"
+  local fn="$2"
+  local cell=""
+
+  if [[ -n "$dep" && "$dep" != "—" ]]; then
+    cell="Dep: $(_escape_html "$dep")"
+  fi
+  if [[ -n "$fn" ]]; then
+    if [[ -n "$cell" ]]; then
+      cell="${cell}<br>"
+    fi
+    cell="${cell}Fn: $(_escape_html "$fn")"
+  fi
+
+  if [[ -z "$cell" ]]; then
+    echo "—"
+  else
+    echo "$cell"
+  fi
+}
+
+function _annotation_table_legend_html() {
+  local mode="$1"
+  case "$mode" in
+    dependencies)
+      echo "<p><em>Reachability: Dep = dependency in graph; Fn = vulnerable function (call graph).</em></p>"
+      ;;
+  esac
+}
+
+function _annotation_table_header_html() {
+  local mode="$1"
+  case "$mode" in
+    dependencies)
+      echo "<table><thead><tr><th>Severity</th><th>Finding</th><th>Package</th><th>Reachability</th><th>Location</th><th>Tags</th></tr></thead><tbody>"
+      ;;
+    sast|ai-sast)
+      echo "<table><thead><tr><th>Severity</th><th>Finding</th><th>CWE</th><th>Location</th><th>Tags</th></tr></thead><tbody>"
+      ;;
+    *)
+      echo "<table><thead><tr><th>Severity</th><th>Finding</th><th>Location</th><th>Tags</th></tr></thead><tbody>"
+      ;;
+  esac
+}
+
+function _annotation_table_row_html() {
+  local mode="$1"
+  local row_json="$2"
+  local level title badges detail url endor_url package reach_dep reach_fn cwe
+  level="$(jq -r '.level // empty' <<<"$row_json")"
+  [[ -n "$level" ]] || return 0
+  title="$(jq -r '.title // empty' <<<"$row_json")"
+  badges="$(jq -r '.badges // empty' <<<"$row_json")"
+  detail="$(jq -r '.detail // empty' <<<"$row_json")"
+  url="$(jq -r '.url // empty' <<<"$row_json")"
+  endor_url="$(jq -r '.endor_url // empty' <<<"$row_json")"
+  package="$(jq -r '.package // empty' <<<"$row_json")"
+  reach_dep="$(jq -r '.reach_dep // empty' <<<"$row_json")"
+  reach_fn="$(jq -r '.reach_fn // empty' <<<"$row_json")"
+  cwe="$(jq -r '.cwe // empty' <<<"$row_json")"
+
+  local loc_cell
+  if [[ -n "$url" && "$url" =~ ^https?:// ]]; then
+    loc_cell="$(_annotation_link_html "$url" "$detail")"
+  else
+    loc_cell="$(_escape_html "$detail")"
+  fi
+
+  local title_html
+  if [[ -n "$endor_url" ]]; then
+    title_html="$(_annotation_link_html "$endor_url" "$title")"
+  else
+    title_html="$(_escape_html "$title")"
+  fi
+
+  local tags_cell="—"
+  if [[ -n "$badges" ]]; then
+    tags_cell="$(_escape_html "$badges")"
+  fi
+
+  local row
+  row="<tr><td>$(_level_display_html "$level")</td><td>${title_html}</td>"
+  if [[ "$mode" == "dependencies" ]]; then
+    row="${row}<td>$(_escape_html "$package")</td>"
+    row="${row}<td>$(_annotation_reachability_cell_html "$reach_dep" "$reach_fn")</td>"
+  elif [[ "$mode" == "sast" || "$mode" == "ai-sast" ]]; then
+    if [[ -n "$cwe" && "$cwe" != "—" ]]; then
+      row="${row}<td>$(_escape_html "$cwe")</td>"
+    else
+      row="${row}<td>—</td>"
+    fi
+  fi
+  row="${row}<td>${loc_cell}</td><td>${tags_cell}</td></tr>"
+  echo "$row"
+}
+
+function _endor_scan_mode_label() {
+  if [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
+    echo "artifact sign"
+  elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "verify" ]]; then
+    echo "artifact verify"
+  elif [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
+    echo "container scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SECRETS:-false}" == "true" ]]; then
+    echo "secrets scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]] \
+    && [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; then
+    echo "AI-SAST scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]]; then
+    echo "SAST scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_DEPENDENCIES:-false}" == "true" ]]; then
+    echo "dependencies scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_TOOLS:-false}" == "true" ]]; then
+    echo "tools scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_GITHUB_ACTIONS:-false}" == "true" ]]; then
+    echo "GitHub Actions scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_AI_MODELS:-false}" == "true" ]]; then
+    echo "AI models scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_PACKAGE:-false}" == "true" ]]; then
+    echo "package scan"
+  else
+    echo "scan"
+  fi
+}
+
+function _count_filtered_findings() {
+  local source_file="$1"
+  [[ -n "$source_file" && -f "$source_file" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  _endor_jq_with_filter -r 'filtered_all_findings | length' "$source_file" 2>/dev/null | awk 'NF { print; exit }'
+}
+
+function _findings_count_line_html() {
+  local count="$1"
+  local scan_exit="${2:-0}"
+  local mode_label="${3:-scan}"
+  [[ -n "$count" ]] || return 0
+  if [[ "$count" =~ ^[0-9]+$ && "$count" -eq 0 && "$scan_exit" -eq 0 ]]; then
+    echo "<p><strong>✨ No findings for $(_escape_html "$mode_label")</strong></p>"
+    return 0
+  fi
+  echo "<p><strong>📋 Findings ($(_escape_html "$mode_label")):</strong> $(_escape_html "$count")</p>"
+}
+
+function _build_admission_warnings_html() {
+  local source_file="$1"
+  [[ -n "$source_file" && -f "$source_file" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+
+  local items=""
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    items="${items}<li>$(_escape_html "$line")</li>"
+  done < <(_endor_jq_with_filter -r 'filtered_admission_warnings[]' "$source_file" 2>/dev/null)
+
+  [[ -n "$items" ]] || return 0
+  echo "<p><strong>Admission policy (this scan)</strong></p><ul>${items}</ul>"
+}
+
+function _build_policy_counts_html() {
+  local source_file="$1"
+  [[ -n "$source_file" && -f "$source_file" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+
+  local blocking warning
+  blocking="$(_endor_jq_with_filter -r 'filtered_blocking_findings | length' "$source_file" 2>/dev/null || echo 0)"
+  warning="$(_endor_jq_with_filter -r 'filtered_warning_findings | length' "$source_file" 2>/dev/null || echo 0)"
+
+  local items=""
+  if [[ "$blocking" =~ ^[0-9]+$ && "$blocking" -gt 0 ]]; then
+    items="${items}<li>🛑 $(_escape_html "$blocking") blocking</li>"
+  fi
+  if [[ "$warning" =~ ^[0-9]+$ && "$warning" -gt 0 ]]; then
+    items="${items}<li>⚠️ $(_escape_html "$warning") policy warnings</li>"
+  fi
+  [[ -n "$items" ]] || return 0
+  echo "<p><strong>📊 Policy findings (this scan)</strong></p><ul>${items}</ul>"
+}
+
+function _annotate_jq_missing_hint_html() {
+  command -v jq >/dev/null 2>&1 && return 0
+  echo "<p><em>ℹ️ Install <code>jq</code> on the agent for severity breakdown and findings table.</em></p>"
+}
+
+function _endor_app_base_url() {
+  echo "https://app.endorlabs.com"
+}
+
+function _build_endor_project_link_html() {
+  local source_file="$1"
+  [[ -n "$source_file" && -f "$source_file" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+
+  local app_base
+  app_base="$(_endor_app_base_url)"
+  local link_line
+  link_line="$(jq -r --arg base "$app_base" '
+    # Default UI filter: hide dismissed findings (stable across app releases).
+    def dismissed_filter_encoded:
+      {"findingExceptions":{"comparator":"NOT_EQUAL","key":"spec.dismiss","value":true}}
+      | tojson
+      | @uri;
+    def version_findings_url($ns; $pu; $cid):
+      "\($base)/t/\($ns|@uri)/projects/\($pu)/versions/\($cid|@uri)/findings?filter.values=\(dismissed_filter_encoded)";
+    def pr_findings_url($ns; $pu; $prid):
+      "\($base)/t/\($ns|@uri)/projects/\($pu)/pr-runs/\($prid|@uri)/findings?filter.values=\(dismissed_filter_encoded)";
+    def first_finding:
+      (.all_findings[0]? // .blocking_findings[0]? // .warning_findings[0]? // empty);
+    first_finding as $f |
+    if $f == null then empty
+    else
+      ($f.tenant_meta.namespace // empty) as $ns |
+      ($f.spec.project_uuid // empty) as $pu |
+      if ($ns | length) == 0 or ($pu | length) == 0 then empty
+      else
+        ($f.context.type // "") as $ctype |
+        ($f.context.id // "default") as $cid |
+        if $ctype == "CONTEXT_TYPE_CI_RUN" then
+          "\(pr_findings_url($ns; $pu; $cid))\tFindings (PR \($cid))"
+        elif $ctype == "CONTEXT_TYPE_REF" or $ctype == "CONTEXT_TYPE_MAIN" then
+          "\(version_findings_url($ns; $pu; $cid))\tFindings (\($cid))"
+        else
+          "\($base)/t/\($ns|@uri)/projects/\($pu)\tProject"
+        end
+      end
+    end
+  ' "$source_file" 2>/dev/null || true)"
+  [[ -n "$link_line" ]] || return 0
+
+  local url label
+  url="${link_line%%$'\t'*}"
+  label="${link_line#*$'\t'}"
+  [[ -n "$url" && -n "$label" ]] || return 0
+  echo "<p>$(_annotation_link_html "$url" "🔗 $label") in Endor Labs</p>"
+}
+
+function _build_findings_annotation_html() {
+  local source_file="$1"
+  local limit="$2"
+  [[ -n "$source_file" && -f "$source_file" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+
+  local project_link_html
+  project_link_html="$(_build_endor_project_link_html "$source_file")"
+  if [[ -n "$project_link_html" ]]; then
+    echo "${project_link_html}"
+  fi
+
+  local has_findings
+  has_findings="$(_endor_jq_with_filter -r 'if (filtered_all_findings | length) > 0 then "yes" else empty end' \
+    "$source_file" 2>/dev/null || true)"
+  [[ "$has_findings" == "yes" ]] || return 0
+
+  local severity_html=""
+  while IFS=$'\t' read -r level count; do
+    [[ -n "$level" && -n "$count" ]] || continue
+    severity_html="${severity_html}<li>$(_level_display_html "$level"): $(_escape_html "$count")</li>"
+  done < <(_endor_jq_with_filter -r '
+    [filtered_all_findings[]? | .spec.level // "FINDING_LEVEL_UNKNOWN"]
+    | group_by(.)
+    | map("\(.[0])\t\(length)")
+    | .[]
+  ' "$source_file" 2>/dev/null)
+
+  if [[ -n "$severity_html" ]]; then
+    echo "<p><strong>By severity</strong></p><ul>${severity_html}</ul>"
+  fi
+
+  if [[ -z "$limit" ]]; then
+    return 0
+  fi
+  if [[ "$limit" -eq 0 ]]; then
+    return 0
+  fi
+
+  local app_base table_mode table_rows row_json summary_json shown total omitted critical_high
+  app_base="$(_endor_app_base_url)"
+  table_mode="$(_endor_annotation_table_mode)"
+  summary_json="$(_endor_jq_table_with_filter -r --argjson limit "$limit" --arg base "$app_base" \
+    'table_selection_summary | @json' "$source_file" 2>/dev/null || echo '{}')"
+  shown="$(jq -r '.shown // 0' <<<"$summary_json")"
+  total="$(jq -r '.total // 0' <<<"$summary_json")"
+  omitted="$(jq -r '.omitted // 0' <<<"$summary_json")"
+  critical_high="$(jq -r '.critical_high // 0' <<<"$summary_json")"
+
+  table_rows=""
+  while IFS= read -r row_json; do
+    [[ -n "$row_json" ]] || continue
+    table_rows="${table_rows}$(_annotation_table_row_html "$table_mode" "$row_json")"
+  done < <(_endor_jq_table_with_filter -r --argjson limit "$limit" --arg base "$app_base" \
+    'selected_table_rows[] | @json' "$source_file" 2>/dev/null)
+
+  if [[ -z "$table_rows" ]]; then
+    return 0
+  fi
+
+  if [[ "$shown" =~ ^[0-9]+$ && "$total" =~ ^[0-9]+$ && "$shown" -eq "$total" ]]; then
+    echo "<p><strong>Findings</strong></p>"
+  elif [[ "$omitted" =~ ^[0-9]+$ && "$omitted" -gt 0 && "$shown" =~ ^[0-9]+$ && "$critical_high" =~ ^[0-9]+$ \
+    && "$shown" -eq "$critical_high" && "$critical_high" -gt 0 ]]; then
+    echo "<p><strong>All critical and high findings ($(_escape_html "$shown"))</strong> ($(_escape_html "$omitted") medium/low in JSON artifact)</p>"
+  elif [[ "$shown" =~ ^[0-9]+$ && "$total" =~ ^[0-9]+$ && "$omitted" =~ ^[0-9]+$ && "$omitted" -gt 0 ]]; then
+    echo "<p><strong>Showing $(_escape_html "$shown") of $(_escape_html "$total") findings</strong> (all critical/high plus up to $(_escape_html "$limit") medium/low; full list in JSON artifact)</p>"
+  else
+    echo "<p><strong>Findings</strong></p>"
+  fi
+  local legend_html
+  legend_html="$(_annotation_table_legend_html "$table_mode")"
+  if [[ -n "$legend_html" ]]; then
+    echo "${legend_html}"
+  fi
+  echo "$(_annotation_table_header_html "$table_mode")${table_rows}</tbody></table>"
+}
+
+function _annotate_artifact_link_html() {
+  local path="${ENDOR_PLUGIN_OUTPUT_FILE:-}"
+  [[ -n "$path" && -f "$path" ]] || return 0
+  local escaped_path
+  escaped_path="$(_escape_html "$path")"
+  echo "<p>$(_annotation_link_html "artifact://${escaped_path}" "📎 Download full scan JSON")</p>"
 }
 
 function annotate_scan() {
@@ -707,33 +1245,14 @@ function annotate_scan() {
   local scan_exit="${1:-0}"
 
   local style="success"
-  local message="Scan completed successfully."
   case "$scan_exit" in
-    0)
-      style="success"
-      message="Scan completed successfully."
-      ;;
-    129)
-      style="warning"
-      message="Scan completed with policy warnings (exit-on-policy-warning)."
-      ;;
-    128)
-      style="error"
-      message="Blocking admission policy failed."
-      ;;
-    33)
-      style="error"
-      message="Scan failed due to a license error."
-      ;;
-    4)
-      style="error"
-      message="Scan failed due to conflicting authentication methods."
-      ;;
-    *)
-      style="error"
-      message="Scan failed (exit code ${scan_exit})."
-      ;;
+    0) style="success" ;;
+    129) style="warning" ;;
+    *) style="error" ;;
   esac
+
+  local message
+  message="$(_annotate_status_message "$scan_exit")"
 
   local findings_count=""
   if [[ -n "${ENDOR_PLUGIN_CAPTURE_FILE:-}" && -f "${ENDOR_PLUGIN_CAPTURE_FILE}" ]]; then
@@ -745,39 +1264,77 @@ function annotate_scan() {
   local escaped_message
   escaped_message="$(_escape_html "$message")"
   local details_html=""
-  if [[ -n "$findings_count" ]]; then
-    details_html="<p><strong>Findings:</strong> $(_escape_html "$findings_count")</p>"
-  fi
+  local mode_label
+  mode_label="$(_endor_scan_mode_label)"
 
-  local mode_label="scan"
   local annotate_context="${ENDOR_PLUGIN_ANNOTATE_CONTEXT:-}"
   if [[ -z "$annotate_context" ]]; then
     annotate_context="endorlabs-scan"
     if [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
-      mode_label="artifact sign"
       annotate_context="endorlabs-sign"
     elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "verify" ]]; then
-      mode_label="artifact verify"
       annotate_context="endorlabs-verify"
     elif [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
-      mode_label="container scan"
       annotate_context="endorlabs-container"
     fi
-  elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "sign" ]]; then
-    mode_label="artifact sign"
-  elif [[ "${ENDOR_PLUGIN_MODE:-scan}" == "verify" ]]; then
-    mode_label="artifact verify"
-  elif [[ "${ENDOR_PLUGIN_SCAN_CONTAINER:-false}" == "true" ]]; then
-    mode_label="container scan"
+  fi
+
+  local findings_count_line
+  findings_count_line="$(_findings_count_line_html "$findings_count" "$scan_exit" "$mode_label")"
+  if [[ -n "$findings_count_line" ]]; then
+    details_html="${findings_count_line}"
   fi
 
   if [[ -n "${ENDOR_PLUGIN_TAGS:-}" ]]; then
     details_html="${details_html}<p><strong>Tags:</strong> $(_escape_html "$ENDOR_PLUGIN_TAGS")</p>"
   fi
 
-  local annotation="<h3>Endor Labs ${mode_label}</h3><p>${escaped_message}</p>${details_html}"
-  log_focus ":endorlabs: Publishing Buildkite annotation (context=${annotate_context})"
-  if ! buildkite-agent annotate "$annotation" --style "$style" --context "$annotate_context"; then
+  local findings_source=""
+  if [[ -n "${ENDOR_PLUGIN_CAPTURE_FILE:-}" && -f "${ENDOR_PLUGIN_CAPTURE_FILE}" ]]; then
+    findings_source="${ENDOR_PLUGIN_CAPTURE_FILE}"
+  elif [[ -n "${ENDOR_PLUGIN_OUTPUT_FILE:-}" && -f "${ENDOR_PLUGIN_OUTPUT_FILE}" ]]; then
+    findings_source="${ENDOR_PLUGIN_OUTPUT_FILE}"
+  fi
+
+  local findings_html=""
+  local policy_html=""
+  if [[ -n "$findings_source" ]]; then
+    local admission_html=""
+    admission_html="$(_build_admission_warnings_html "$findings_source")"
+    if [[ -n "$admission_html" ]]; then
+      details_html="${details_html}${admission_html}"
+    fi
+    policy_html="$(_build_policy_counts_html "$findings_source")"
+    if [[ -n "$policy_html" ]]; then
+      details_html="${details_html}${policy_html}"
+    fi
+    findings_html="$(_build_findings_annotation_html "$findings_source" "${ENDOR_PLUGIN_ANNOTATE_FINDINGS_LIMIT:--1}")"
+    if [[ -n "$findings_html" ]]; then
+      details_html="${details_html}${findings_html}"
+    else
+      local jq_hint
+      jq_hint="$(_annotate_jq_missing_hint_html)"
+      if [[ -n "$jq_hint" ]]; then
+        details_html="${details_html}${jq_hint}"
+      fi
+    fi
+    local artifact_link
+    artifact_link="$(_annotate_artifact_link_html)"
+    if [[ -n "$artifact_link" ]]; then
+      details_html="${details_html}${artifact_link}"
+    fi
+  fi
+
+  local mode_icon annotation
+  mode_icon="$(_scan_mode_icon)"
+  annotation="<h3>${mode_icon} Endor Labs $(_escape_html "$mode_label")</h3><p>${escaped_message}</p>${details_html}"
+  local -a annotate_args=(annotate "$annotation" --style "$style" --context "$annotate_context")
+  if [[ "${ENDOR_PLUGIN_ANNOTATE_SCOPE:-build}" == "job" ]]; then
+    annotate_args+=(--scope job)
+  fi
+
+  log_focus ":endorlabs: Publishing Buildkite annotation (context=${annotate_context}, scope=${ENDOR_PLUGIN_ANNOTATE_SCOPE:-build})"
+  if ! buildkite-agent "${annotate_args[@]}"; then
     log_warn "endorlabs plugin: buildkite-agent annotate failed (missing agent token or not in a Buildkite job?); continuing"
   fi
 
