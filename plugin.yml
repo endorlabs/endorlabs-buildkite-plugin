@@ -17,8 +17,8 @@ configuration:
     namespace:
       type: string
       description: >-
-        Endor Labs tenant namespace for the project. Required. Same as GitHub
-        Action namespace. https://docs.endorlabs.com/developers-api/cli/commands/scan
+        Endor Labs tenant namespace for the project. Required.
+        https://docs.endorlabs.com/developers-api/cli/commands/scan
     api:
       type: string
       description: >-
@@ -29,8 +29,9 @@ configuration:
       description: >-
         Name of a Buildkite secret env var holding the API key. The plugin
         exports ENDOR_API_CREDENTIALS_KEY from its value; never passes --api-key
-        on the CLI. Use with api_secret_env. See SECURITY.md and
-        https://buildkite.com/docs/agent/v3/clusters/secrets
+        on the CLI. Use with api_secret_env. See
+        https://github.com/endorlabs/endorlabs-buildkite-plugin/blob/main/SECURITY.md
+        and https://buildkite.com/docs/agent/v3/clusters/secrets
     api_secret_env:
       type: string
       description: >-
@@ -63,13 +64,13 @@ configuration:
       description: >-
         Software composition analysis (SCA): analyze declared and reachable
         dependencies (--dependencies=true). Default true. At least one scan kind
-        must be enabled in mode=scan. https://docs.endorlabs.com/scan
+        must be enabled in mode=scan. https://docs.endorlabs.com/scan/sca
     scan_secrets:
       type: boolean
       default: false
       description: >-
         Scan the repository for exposed secrets (--secrets=true). Often paired
-        with scan_dependencies in CI. https://docs.endorlabs.com/scan
+        with scan_dependencies in CI. https://docs.endorlabs.com/scan/secrets
     scan_sast:
       type: boolean
       default: false
@@ -81,27 +82,27 @@ configuration:
       default: false
       description: >-
         Deep secret scan of full git history (--git-logs=true). Requires
-        scan_secrets=true. https://docs.endorlabs.com/setup-deployment/ci-cd/scan-with-github-actions
+        scan_secrets=true. https://docs.endorlabs.com/scan/secrets
     scan_github_actions:
       type: boolean
       default: false
       description: >-
         Analyze GitHub Actions workflows referenced in the repo for vulnerable
         or malicious actions (--ghactions=true).
-        https://docs.endorlabs.com/setup-deployment/ci-cd/scan-with-github-actions
+        https://docs.endorlabs.com/scan/github-actions
     scan_ai_models:
       type: boolean
       default: false
       description: >-
         Detect AI model usage in the codebase (--ai-models=true). Requires
         scan_dependencies=true.
-        https://docs.endorlabs.com/setup-deployment/ci-cd/scan-with-github-actions
+        https://docs.endorlabs.com/scan/ai-models
     scan_tools:
       type: boolean
       default: false
       description: >-
         Inventory CI/CD and developer tools in the repository (--tools=true).
-        https://docs.endorlabs.com/setup-deployment/ci-cd/scan-with-github-actions
+        https://docs.endorlabs.com/scan
     scan_package:
       type: boolean
       default: false
@@ -109,7 +110,7 @@ configuration:
         Scan a built artifact or package at scan_path (--package=true). Requires
         project_name and scan_path; mutually exclusive with scan_dependencies,
         scan_secrets, scan_sast, and scan_container.
-        https://docs.endorlabs.com/setup-deployment/ci-cd/scan-with-github-actions
+        https://docs.endorlabs.com/developers-api/cli/commands/scan
     scan_container:
       type: boolean
       default: false
