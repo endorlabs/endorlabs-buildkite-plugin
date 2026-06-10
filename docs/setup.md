@@ -41,7 +41,7 @@ Do not duplicate `ENDOR_NAMESPACE` under top-level `env:` when it is already und
 
 4. Confirm the build log shows `:endorlabs: Running endorctl scan`. Policy blocking uses exit `128` by default (`fail_on_policy: true`). See [troubleshooting.md](troubleshooting.md) for exits and clone issues.
 
-**Public plugin ref:** use `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.5` until `endorlabs#v0.1.5` appears in the [plugins directory](https://buildkite.com/docs/integrations/buildkite-plugins). Vendoring still works for air-gapped or cross-org constraints.
+**Public plugin ref:** use `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.6` until `endorlabs#v0.1.6` appears in the [plugins directory](https://buildkite.com/docs/integrations/buildkite-plugins). Vendoring still works for air-gapped or cross-org constraints.
 
 More YAML: [examples.md](examples.md). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
 

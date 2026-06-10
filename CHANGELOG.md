@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-06-10
+
+### Changed
+
+- `plugin.yml` descriptions for `aws_role_arn`, `certificate_oidc_issuer`,
+  `scm_token_env`, and `additional_args` clarify Buildkite OIDC vs Endor API auth,
+  PR comment tokens, and artifact provenance issuers.
+- `docs/troubleshooting.md` and `docs/examples.md` — same auth/OIDC guidance for
+  Buildkite users.
+
 ## [0.1.5] - 2026-06-10
 
 ### Added

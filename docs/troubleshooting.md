@@ -33,6 +33,26 @@ endorctl rejects `--pr` without `--pr-incremental` when `--ai-sast` is enabled. 
 `pr_incremental: true` (with PR id and baseline context), or `pr: false` for
 monitoring-style scans on PR builds.
 
+## Buildkite OIDC vs Endor authentication
+
+Buildkite issues OIDC tokens (`https://agent.buildkite.com`) for federating into
+other systems — see [OIDC in Buildkite Pipelines](https://buildkite.com/docs/pipelines/security/oidc).
+**endorctl does not accept Buildkite OIDC tokens for Endor API authentication.**
+There is no `--enable-buildkite-oidc` flag; do not pass `--enable-github-action-token`
+via `additional_args` on Buildkite (GitHub Actions only). Use API credentials
+(`api_key_env` / `api_secret_env`) or cloud keyless auth (`aws_role_arn`,
+`gcp_service_account`, `enable_azure_managed_identity`) on the agent.
+
+On AWS agents without a static instance profile, you may obtain ambient AWS
+credentials first (for example
+[aws-assume-role-with-web-identity](https://buildkite.com/docs/pipelines/security/oidc/aws))
+and then set `aws_role_arn` for Endor federation — that is still AWS keyless to
+Endor, not native Buildkite→Endor OIDC.
+
+`certificate_oidc_issuer` in sign/verify modes is **artifact provenance**, not API
+login. Match the issuer to your CI (`https://token.actions.githubusercontent.com`
+vs `https://agent.buildkite.com` per tenant policy).
+
 ## SCM tokens vs Buildkite OIDC
 
 There is no first-class Buildkite OIDC flow in this plugin for SCM commenting.
@@ -63,7 +83,7 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   — Buildkite’s plugin shorthand points at the [plugin directory](https://buildkite.com/docs/pipelines/integrations/plugins/writing#step-2-add-the-plugin-to-your-pipeline)
   mirror until your release is synced. For the **`endorlabs/endorlabs-buildkite-plugin`**
   GitHub repo, use a single full URL:
-  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.5`
+  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.6`
 - **Build failed but you expected only scan results** — `post-command` runs after your
   `command`. If Bazel/make fails, the step is red even when the plugin runs. Fix the
   build, or split scan into a separate step that depends on a successful build.

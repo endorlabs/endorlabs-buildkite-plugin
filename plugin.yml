@@ -43,9 +43,12 @@ configuration:
     aws_role_arn:
       type: string
       description: >-
-        AWS keyless auth role ARN passed to endorctl as `--aws-role-arn`. Use on
-        EC2/EKS agents with ambient AWS credentials (instance profile or IRSA).
-        Mutually exclusive with API key auth. See
+        AWS keyless auth role ARN passed to endorctl as `--aws-role-arn`. The
+        agent must already have ambient AWS credentials (instance profile, IRSA,
+        or credentials from an earlier step such as Buildkite OIDC to AWS via
+        [aws-assume-role-with-web-identity](https://buildkite.com/docs/pipelines/security/oidc/aws)).
+        This is AWS keyless to Endor, not Buildkite OIDC to Endor. Mutually
+        exclusive with API key auth. See
         [AWS keyless authentication](https://docs.endorlabs.com/setup-deployment/ci-cd/keyless-authentication/aws-keyless-auth) for more information.
     enable_azure_managed_identity:
       type: boolean
@@ -230,8 +233,12 @@ configuration:
     certificate_oidc_issuer:
       type: string
       description: >-
-        OIDC issuer URL for artifact certificate identity (`--certificate-oidc-issuer`).
-        Required when mode is sign or verify. See
+        OIDC issuer URL for artifact certificate identity (`--certificate-oidc-issuer`)
+        in sign/verify modes — provenance metadata, not Endor API authentication.
+        Use the issuer for the CI that produced the artifact (for example
+        `https://token.actions.githubusercontent.com` on GitHub Actions, or
+        `https://agent.buildkite.com` on Buildkite when your tenant policy
+        supports it). Required when mode is sign or verify. See
         [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     certificate_identity:
       type: string
@@ -428,14 +435,19 @@ configuration:
       type: string
       description: >-
         Name of an environment variable whose value is passed to endorctl as
-        `--scm-token` when `enable_pr_comments` is true. The token value is never
+        `--scm-token` when `enable_pr_comments` is true. Supply an SCM PAT or
+        bot token (for example via Buildkite cluster secrets); Buildkite
+        pipeline OIDC is not used for PR comments. The token value is never
         printed by the plugin. See
         [PR comments](https://docs.endorlabs.com/scan/pr-scans/pr-comments) for more information.
     additional_args:
       type: string
       description: >-
         Extra endorctl arguments appended verbatim (space-separated). Use for
-        flags not yet exposed as plugin keys. See the
+        flags not yet exposed as plugin keys. Do not use for
+        `--enable-github-action-token` on Buildkite — that flag is for GitHub
+        Actions OIDC only. endorctl has no Buildkite OIDC API-auth equivalent;
+        use API credentials or cloud keyless options instead. See the
         [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
   required:
     - namespace
