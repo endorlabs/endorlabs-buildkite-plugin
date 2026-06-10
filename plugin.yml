@@ -13,25 +13,26 @@ configuration:
       description: >-
         Plugin operation. scan runs endorctl scan or container scan (default).
         sign and verify run artifact signing workflows; scan_* options are
-        invalid in those modes. See https://docs.endorlabs.com/developers-api/cli/commands/scan
+        invalid in those modes. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     namespace:
       type: string
       description: >-
-        Endor Labs tenant namespace for the project. Required.
-        https://docs.endorlabs.com/developers-api/cli/commands/scan
+        Endor Labs tenant namespace for the project. Required. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     api:
       type: string
       description: >-
-        Endor Labs API base URL (--api). Defaults to production when unset.
-        https://docs.endorlabs.com/developers-api/cli/commands/scan
+        Endor Labs API base URL (--api). Defaults to production when unset. See
+        the [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     api_key_env:
       type: string
       description: >-
         Name of a Buildkite secret env var holding the API key. The plugin
         exports ENDOR_API_CREDENTIALS_KEY from its value; never passes --api-key
-        on the CLI. Use with api_secret_env. See
-        https://github.com/endorlabs/endorlabs-buildkite-plugin/blob/main/SECURITY.md
-        and https://buildkite.com/docs/agent/v3/clusters/secrets
+        on the CLI. Use with api_secret_env. See the
+        [plugin security guide](https://github.com/endorlabs/endorlabs-buildkite-plugin/blob/main/SECURITY.md)
+        and [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) for more information.
     api_secret_env:
       type: string
       description: >-
@@ -43,116 +44,125 @@ configuration:
       description: >-
         AWS keyless auth role ARN passed to endorctl as --aws-role-arn. Use on
         EC2/EKS agents with ambient AWS credentials (instance profile or IRSA).
-        Mutually exclusive with API key auth. https://docs.endorlabs.com/setup-deployment/ci-cd/keyless-authentication
+        Mutually exclusive with API key auth. See
+        [AWS keyless authentication](https://docs.endorlabs.com/setup-deployment/ci-cd/keyless-authentication/aws-keyless-auth) for more information.
     enable_azure_managed_identity:
       type: boolean
       default: false
       description: >-
         Enable Azure keyless auth via managed identity
         (--enable-azure-managed-identity). Mutually exclusive with API key auth.
-        https://docs.endorlabs.com/setup-deployment/ci-cd/keyless-authentication
+        See [Azure keyless authentication](https://docs.endorlabs.com/setup-deployment/ci-cd/keyless-authentication/azure-keyless-auth) for more information.
     gcp_service_account:
       type: string
       description: >-
         GCP keyless auth target service account passed as
         --gcp-service-account. Typically the Endor federation service account.
-        Mutually exclusive with API key auth.
-        https://docs.endorlabs.com/setup-deployment/ci-cd/keyless-authentication
+        Mutually exclusive with API key auth. See
+        [Google Cloud keyless authentication](https://docs.endorlabs.com/setup-deployment/ci-cd/keyless-authentication/google-keyless-auth) for more information.
     scan_dependencies:
       type: boolean
       default: true
       description: >-
         Software composition analysis (SCA): analyze declared and reachable
         dependencies (--dependencies=true). Default true. At least one scan kind
-        must be enabled in mode=scan. https://docs.endorlabs.com/scan/sca
+        must be enabled in mode=scan. See
+        [software composition analysis](https://docs.endorlabs.com/scan/sca) for more information.
     scan_secrets:
       type: boolean
       default: false
       description: >-
         Scan the repository for exposed secrets (--secrets=true). Often paired
-        with scan_dependencies in CI. https://docs.endorlabs.com/scan/secrets
+        with scan_dependencies in CI. See
+        [secrets detection](https://docs.endorlabs.com/scan/secrets) for more information.
     scan_sast:
       type: boolean
       default: false
       description: >-
-        Static application security testing (--sast=true).
-        https://docs.endorlabs.com/scan/sast
+        Static application security testing (--sast=true). See
+        [SAST scanning](https://docs.endorlabs.com/scan/sast) for more information.
     scan_git_logs:
       type: boolean
       default: false
       description: >-
         Deep secret scan of full git history (--git-logs=true). Requires
-        scan_secrets=true. https://docs.endorlabs.com/scan/secrets
+        scan_secrets=true. See
+        [scanning for secrets](https://docs.endorlabs.com/scan/secrets/scan-secrets) for more information.
     scan_github_actions:
       type: boolean
       default: false
       description: >-
         Analyze GitHub Actions workflows referenced in the repo for vulnerable
-        or malicious actions (--ghactions=true).
-        https://docs.endorlabs.com/scan/github-actions
+        or malicious actions (--ghactions=true). See
+        [GitHub Actions scanning](https://docs.endorlabs.com/scan/github-actions) for more information.
     scan_ai_models:
       type: boolean
       default: false
       description: >-
         Detect AI model usage in the codebase (--ai-models=true). Requires
-        scan_dependencies=true.
-        https://docs.endorlabs.com/scan/ai-models
+        scan_dependencies=true. See
+        [AI model detection](https://docs.endorlabs.com/scan/ai-models) for more information.
     scan_tools:
       type: boolean
       default: false
       description: >-
         Inventory CI/CD and developer tools in the repository (--tools=true).
-        https://docs.endorlabs.com/scan
+        See [scanning with Endor Labs](https://docs.endorlabs.com/scan) for more information.
     scan_package:
       type: boolean
       default: false
       description: >-
         Scan a built artifact or package at scan_path (--package=true). Requires
         project_name and scan_path; mutually exclusive with scan_dependencies,
-        scan_secrets, scan_sast, and scan_container.
-        https://docs.endorlabs.com/developers-api/cli/commands/scan
+        scan_secrets, scan_sast, and scan_container. See
+        [scanning artifacts and binaries](https://docs.endorlabs.com/scan/sca/binary-artifact-scan) for more information.
     scan_container:
       type: boolean
       default: false
       description: >-
         Run endorctl container scan instead of repository scan. Requires image or
         image_tar; mutually exclusive with repository scan kinds — use a separate
-        step. https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl
+        step. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     phantom_dependencies:
       type: boolean
       default: false
       description: >-
         Detect dependencies used in source but not declared in manifest files
-        (--phantom-dependencies=true). Used with SCA reachability.
-        https://docs.endorlabs.com/scan/sca/reachability-analysis
+        (--phantom-dependencies=true). Used with SCA reachability. See
+        [phantom dependencies](https://docs.endorlabs.com/scan/sca/reachability-analysis#phantom-dependencies) for more information.
     disable_code_snippet_storage:
       type: boolean
       default: false
       description: >-
         Do not store or display source snippets for findings
-        (--disable-code-snippet-storage=true). Requires scan_sast=true.
-        https://docs.endorlabs.com/scan/sast
+        (--disable-code-snippet-storage=true). Requires scan_sast=true. See
+        [SAST scanning](https://docs.endorlabs.com/scan/sast) for more information.
     use_bazel:
       type: boolean
       default: false
       description: >-
         Enable Bazel-aware scan (--use-bazel). Requires bazel on the agent PATH
         and a successful target prebuild in the step command; the plugin does not
-        install Bazel. https://docs.endorlabs.com/scan/scan-profiles/build-tools
+        install Bazel. See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
     bazel_include_targets:
       type: string
       description: >-
         Comma-separated Bazel targets to include (--bazel-include-targets).
-        Mutually exclusive with bazel_targets_query.
+        Mutually exclusive with bazel_targets_query. See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
     bazel_exclude_targets:
       type: string
       description: >-
-        Comma-separated Bazel targets to exclude (--bazel-exclude-targets).
+        Comma-separated Bazel targets to exclude (--bazel-exclude-targets). See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
     bazel_targets_query:
       type: string
       description: >-
         Bazel query for target discovery (--bazel-targets-query). Ignored when
-        bazel_include_targets is set.
+        bazel_include_targets is set. See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
     scan_path:
       type: string
       description: >-
@@ -168,40 +178,46 @@ configuration:
       description: >-
         Container image reference to scan (--image), e.g. alpine:3.19. Required
         for scan_container unless image_tar is set. Mutually exclusive with
-        image_tar.
+        image_tar. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     image_tar:
       type: string
       description: >-
         Path to a saved container image tarball (--image-tar). Alternative to
-        image for air-gapped or pre-exported images.
+        image for air-gapped or pre-exported images. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     as_ref:
       type: boolean
       default: false
       description: >-
         Persist container scan context as a version ref (--as-ref). Container
-        scans only. https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl
+        scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     os_reachability:
       type: boolean
       default: false
       description: >-
         Enable OS package reachability for container scans (--os-reachability).
-        https://docs.endorlabs.com/scan/containers/container-reachability
+        See [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
     project_tags:
       type: string
       description: >-
-        Comma-separated tags on the container scan project (--project-tags).
+        Comma-separated tags on the container scan project (--project-tags). See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     container_scan_path:
       type: string
       default: "."
       description: >-
         Git repository path for container scan context (--path on container scan).
         Associate container results with an existing SCA project when it matches
-        the SCA scan_path.
+        the SCA scan_path. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     profiling_data_dir:
       type: string
       description: >-
         Directory of runtime profiling data to include in container reachability
-        analysis (--profiling-data-dir).
+        analysis (--profiling-data-dir). See
+        [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
     artifact_name:
       type: string
       description: >-
@@ -298,7 +314,8 @@ configuration:
       default: false
       description: >-
         Fail the step on policy warnings (--exit-on-policy-warning). Exit code
-        129 when enabled. https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes
+        129 when enabled. See
+        [endorctl exit codes](https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes) for more information.
     annotate:
       type: boolean
       default: false
@@ -339,7 +356,7 @@ configuration:
       default: true
       description: >-
         When false, treat endorctl exit 128 (blocking admission policy) as success.
-        https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes
+        See [endorctl exit codes](https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes) for more information.
     upload_artifacts:
       type: boolean
       default: false
@@ -356,8 +373,8 @@ configuration:
         When false, never enable PR scan flags even on pull-request builds
         (numeric BUILDKITE_PULL_REQUEST). When true or omitted, PR mode is
         enabled when Buildkite exposes a numeric pull request id, or when
-        pr_baseline is set (explicit baseline implies a PR-style scan).
-        https://docs.endorlabs.com/scan/pr-scans
+        pr_baseline is set (explicit baseline implies a PR-style scan). See
+        [PR scans](https://docs.endorlabs.com/scan/pr-scans) for more information.
     pr_baseline:
       type: string
       description: >-
@@ -372,15 +389,15 @@ configuration:
         Incremental PR scan (--pr-incremental=true). Requires a numeric
         BUILDKITE_PULL_REQUEST or pr_baseline, and baseline context via
         pr_baseline, BUILDKITE_PULL_REQUEST_BASE_BRANCH, or enable_pr_comments.
-        https://docs.endorlabs.com/scan/pr-scans
+        See [PR scans](https://docs.endorlabs.com/scan/pr-scans) for more information.
     enable_pr_comments:
       type: boolean
       default: false
       description: >-
         Post findings as SCM review comments (--enable-pr-comments=true).
         Requires a pull-request build (numeric BUILDKITE_PULL_REQUEST), pr not
-        false, and scm_token_env pointing to a non-empty token.
-        https://docs.endorlabs.com/scan/pr-scans/pr-comments
+        false, and scm_token_env pointing to a non-empty token. See
+        [PR comments](https://docs.endorlabs.com/scan/pr-scans/pr-comments) for more information.
     scm_token_env:
       type: string
       description: >-
@@ -391,7 +408,8 @@ configuration:
       type: string
       description: >-
         Extra endorctl arguments appended verbatim (space-separated). Use for
-        flags not yet exposed as plugin keys. https://docs.endorlabs.com/developers-api/cli/commands/scan
+        flags not yet exposed as plugin keys. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
   required:
     - namespace
   additionalProperties: false
