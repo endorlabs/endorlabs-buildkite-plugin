@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-10
+
 ### Added
 
 - Richer Buildkite annotations when `annotate: true`: scan-kind icon in title, status-line
@@ -15,6 +17,12 @@ All notable changes to this project are documented here.
   Links to the Endor Labs app: branch/PR findings tab (non-dismissed filter), and
   per-finding titles opening the findings drawer via `resourceDetail`.
 - `annotate_scope` (`build` | `job`) and `annotate_findings_limit` plugin options.
+
+### Changed
+
+- `plugin.yml` option descriptions rewritten with markdown links to
+  [docs.endorlabs.com](https://docs.endorlabs.com) for Buildkite plugin directory and
+  docs-site rendering (replaces GitHub Actions–centric wording).
 
 ## [0.1.4] - 2026-06-03
 
