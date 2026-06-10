@@ -38,7 +38,8 @@ configuration:
       description: >-
         Name of a Buildkite secret env var holding the API secret. Exported as
         ENDOR_API_CREDENTIALS_SECRET. Required when api_key_env is set unless
-        both credentials are pre-exported on the agent.
+        both credentials are pre-exported on the agent. See
+        [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) for more information.
     aws_role_arn:
       type: string
       description: >-
@@ -222,61 +223,74 @@ configuration:
       type: string
       description: >-
         Artifact identifier for sign/verify modes (--artifact-name). Required
-        when mode is sign or verify.
+        when mode is sign or verify. See
+        [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     certificate_oidc_issuer:
       type: string
       description: >-
         OIDC issuer URL for artifact certificate identity (--certificate-oidc-issuer).
-        Required when mode is sign or verify.
+        Required when mode is sign or verify. See
+        [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     certificate_identity:
       type: string
       description: >-
-        Certificate identity subject for sign/verify (--certificate-identity).
+        Certificate identity subject for sign/verify (--certificate-identity). See
+        [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     source_repository_ref:
       type: string
       description: >-
         Git ref of the source repository for signing (--source-repository-ref).
-        Required when mode=sign.
+        Required when mode=sign. See
+        [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     source_repository:
       type: string
       description: >-
-        Source repository URL metadata for sign/verify (--source-repository).
+        Source repository URL metadata for sign/verify (--source-repository). See
+        [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     source_repository_owner:
       type: string
       description: >-
-        Source repository owner for sign/verify (--source-repository-owner).
+        Source repository owner for sign/verify (--source-repository-owner). See
+        [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     source_repository_digest:
       type: string
       description: >-
-        Source repository digest for sign/verify (--source-repository-digest).
+        Source repository digest for sign/verify (--source-repository-digest). See
+        [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     build_config_name:
       type: string
       description: >-
         Build configuration name for provenance (--build-config-name). Sign/verify.
+        See [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     build_config_digest:
       type: string
       description: >-
         Build configuration digest for provenance (--build-config-digest). Sign/verify.
+        See [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     runner_environment:
       type: string
       description: >-
         Runner environment label for provenance (--runner-environment). Sign/verify.
+        See [artifact signing](https://docs.endorlabs.com/developers-api/cli/commands/sign-artifacts) for more information.
     endorctl_version:
       type: string
       description: >-
         Pin endorctl release version at install. When set, endorctl_checksum is
         required. When unset, installs latest from the API meta/version endpoint.
+        See [installing and configuring endorctl](https://docs.endorlabs.com/developers-api/cli/install-and-configure) for more information.
     endorctl_checksum:
       type: string
       description: >-
         SHA-256 checksum of the pinned endorctl binary for the agent OS/arch.
-        Required when endorctl_version is set.
+        Required when endorctl_version is set. See
+        [installing and configuring endorctl](https://docs.endorlabs.com/developers-api/cli/install-and-configure) for more information.
     endorctl_skip_install:
       type: boolean
       default: false
       description: >-
         Skip downloading endorctl; use the binary already on PATH. Useful on
-        custom agent images with a preinstalled CLI.
+        custom agent images with a preinstalled CLI. See
+        [installing and configuring endorctl](https://docs.endorlabs.com/developers-api/cli/install-and-configure) for more information.
     log_level:
       type: string
       enum: [ "debug", "info", "warn", "error", "fatal" ]
@@ -322,14 +336,16 @@ configuration:
       description: >-
         Publish an HTML summary via buildkite-agent annotate after the scan.
         Includes severity counts, optional findings table, and artifact link.
-        No code snippets in annotations.
+        No code snippets in annotations. See
+        [buildkite-agent annotate](https://buildkite.com/docs/agent/cli/reference/annotate) for more information.
     annotate_context:
       type: string
       description: >-
         Optional buildkite-agent annotate --context. Use a unique value per step
         when one build runs multiple plugin invocations (layered scans). When
         omitted, context is derived from mode (endorlabs-scan, endorlabs-container,
-        endorlabs-sign, endorlabs-verify).
+        endorlabs-sign, endorlabs-verify). See
+        [buildkite-agent annotate](https://buildkite.com/docs/agent/cli/reference/annotate) for more information.
     annotate_scope:
       type: string
       enum: [ "build", "job" ]
@@ -337,7 +353,8 @@ configuration:
       description: >-
         Where the annotation appears in the Buildkite UI. Use job to show findings
         on the step job drawer (requires buildkite-agent v3.112+). Default build
-        shows annotations on the build page.
+        shows annotations on the build page. See
+        [Buildkite annotations](https://buildkite.com/docs/pipelines/configure/annotations) for more information.
     annotate_findings_limit:
       type: integer
       default: -1
@@ -350,7 +367,8 @@ configuration:
       default: false
       description: >-
         When true, convert non-zero endorctl exits to step success except exit 128
-        while fail_on_policy is true (policy blocks still fail the step).
+        while fail_on_policy is true (policy blocks still fail the step). See
+        [endorctl exit codes](https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes) for more information.
     fail_on_policy:
       type: boolean
       default: true
@@ -362,11 +380,13 @@ configuration:
       default: false
       description: >-
         Upload output_file, sarif_file, and artifact_paths via buildkite-agent
-        after the scan. Auto-enabled when output_file or sarif_file is set.
+        after the scan. Auto-enabled when output_file or sarif_file is set. See
+        [buildkite-agent artifact](https://buildkite.com/docs/agent/cli/reference/artifact) for more information.
     artifact_paths:
       type: string
       description: >-
         Comma-separated extra file paths to upload when upload_artifacts is true.
+        See [buildkite-agent artifact](https://buildkite.com/docs/agent/cli/reference/artifact) for more information.
     pr:
       type: boolean
       description: >-
@@ -381,7 +401,8 @@ configuration:
         Git ref for the merge target (e.g. main). Overrides
         BUILDKITE_PULL_REQUEST_BASE_BRANCH when both are present. With
         enable_pr_comments, endorctl can infer the baseline from the PR unless
-        you set this explicitly.
+        you set this explicitly. See
+        [PR scans](https://docs.endorlabs.com/scan/pr-scans) for more information.
     pr_incremental:
       type: boolean
       default: false
@@ -403,7 +424,8 @@ configuration:
       description: >-
         Name of an environment variable whose value is passed to endorctl as
         --scm-token when enable_pr_comments is true. The token value is never
-        printed by the plugin.
+        printed by the plugin. See
+        [PR comments](https://docs.endorlabs.com/scan/pr-scans/pr-comments) for more information.
     additional_args:
       type: string
       description: >-
