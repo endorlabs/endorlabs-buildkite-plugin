@@ -17,6 +17,26 @@ branch name for PR and policy behaviour. The plugin passes `BUILDKITE_BRANCH` as
 `--detached-ref-name` on every run so scans align with the pipeline branch even
 when Git is detached.
 
+## `--pr` vs `--scm-pr-id`
+
+endorctl uses two different PR flags (see [PR scans](https://docs.endorlabs.com/scan/pr-scans)):
+
+- **`--pr`** — PR scan *mode* (point-in-time CI run, not main monitoring).
+- **`--scm-pr-id`** — *which* PR/MR id to associate; required for
+  `--enable-pr-comments`.
+
+The plugin maps them from Buildkite automatically:
+
+| Plugin input | `--pr` | `--scm-pr-id` |
+|--------------|--------|---------------|
+| Numeric `BUILDKITE_PULL_REQUEST`, `pr` not `false` | yes | no |
+| `enable_pr_comments: true` + numeric `BUILDKITE_PULL_REQUEST` | yes | yes (`BUILDKITE_PULL_REQUEST`) |
+| `pr_baseline` set, `pr` not `false` | yes | only with `enable_pr_comments` + numeric PR |
+| `pr: false` | no | no |
+
+There is no `scm_pr_id` plugin option — the id comes from
+`BUILDKITE_PULL_REQUEST` when `enable_pr_comments` is enabled.
+
 ## PR baseline and incremental scans
 
 - **`pr_incremental` fails validation** — Ensure `BUILDKITE_PULL_REQUEST` is a
@@ -25,7 +45,13 @@ when Git is detached.
   `enable_pr_comments: true` so endorctl can infer the merge target.
 - **`enable_pr_comments` fails** — Requires a PR build (numeric
   `BUILDKITE_PULL_REQUEST`), `pr: false` must not be set, and `scm_token_env`
-  must name a non-empty environment variable on the agent.
+  must name a non-empty environment variable on the agent. PR comments are not
+  Buildkite-native: endorctl must call the SCM API using the Endor project's
+  registered repo (`git.organization` / `git.path` and `platform_source`) plus
+  `--scm-pr-id` and `--scm-token`. For GitHub repos that means a GitHub PAT and
+  a PR number that exists on that repo; `BUILDKITE_PULL_REQUEST_BASE_BRANCH` is
+  not passed when comments are enabled because endorctl loads the baseline from
+  the GitHub/GitLab/Bitbucket PR/MR object instead.
 
 ## AI-SAST and pull requests
 
@@ -83,7 +109,7 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   — Buildkite’s plugin shorthand points at the [plugin directory](https://buildkite.com/docs/pipelines/integrations/plugins/writing#step-2-add-the-plugin-to-your-pipeline)
   mirror until your release is synced. For the **`endorlabs/endorlabs-buildkite-plugin`**
   GitHub repo, use a single full URL:
-  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.6`
+  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.7`
 - **Build failed but you expected only scan results** — `post-command` runs after your
   `command`. If Bazel/make fails, the step is red even when the plugin runs. Fix the
   build, or split scan into a separate step that depends on a successful build.
@@ -92,6 +118,10 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
 
 - **`annotate: true` has no effect locally** — `buildkite-agent annotate` needs a real
   Buildkite job and agent session token. Local Docker smoke logs a warning and continues.
+- **Full scan JSON in the step log** — endorctl prints JSON to stdout. With
+  `annotate: true` or `output_file` set, the plugin captures that JSON to a temp
+  file or your output path instead of echoing it into the log. Set `output_file`
+  when you also want a downloadable artifact and an annotation link.
 - **“No job annotations” in the job drawer** — the plugin defaults to `annotate_scope: build`
   (build-level Annotations tab). Use `annotate_scope: job` for per-step job annotations
   (requires buildkite-agent v3.112+). With `output_file` set, annotations include a severity

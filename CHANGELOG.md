@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-06-09
+
+### Changed
+
+- Pass `--scm-pr-id` only when `enable_pr_comments` is true (matches endorctl
+  validation and the GitHub Action). Default PR builds use `--pr` + `--pr-baseline`
+  only.
+- `annotate: true` and `output_file` capture endorctl JSON stdout to a file or
+  temp path instead of teeing it into the Buildkite step log (endorctl has no
+  `--output-file` flag).
+- Document `--pr` (PR scan mode) vs `--scm-pr-id` (PR/MR identity) in README,
+  `plugin.yml`, `docs/examples.md`, and `docs/troubleshooting.md`.
+- Clarify that `enable_pr_comments` depends on SCM API access (GitHub/GitLab/
+  Bitbucket per the Endor project), not Buildkite env alone.
+
 ## [0.1.6] - 2026-06-10
 
 ### Changed

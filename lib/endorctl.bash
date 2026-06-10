@@ -365,21 +365,20 @@ function _ensure_output_parent_dir() {
 function _run_endorctl_with_capture() {
   local -a args=("$@")
   ENDOR_PLUGIN_CAPTURE_FILE=""
+  # endorctl writes scan JSON to stdout; there is no --output-file flag. When we
+  # need JSON for annotations or output_file, capture stdout to disk instead of
+  # teeing it into the Buildkite log.
   if [[ -n "$ENDOR_PLUGIN_OUTPUT_FILE" ]]; then
     _ensure_output_parent_dir "$ENDOR_PLUGIN_OUTPUT_FILE"
+    endorctl "${args[@]}" >"$ENDOR_PLUGIN_OUTPUT_FILE"
     if [[ "$ENDOR_PLUGIN_ANNOTATE" == "true" ]]; then
-      ENDOR_PLUGIN_CAPTURE_FILE="$(mktemp)"
-      endorctl "${args[@]}" | tee "$ENDOR_PLUGIN_OUTPUT_FILE" "$ENDOR_PLUGIN_CAPTURE_FILE"
-    else
-      endorctl "${args[@]}" | tee "$ENDOR_PLUGIN_OUTPUT_FILE"
+      ENDOR_PLUGIN_CAPTURE_FILE="$ENDOR_PLUGIN_OUTPUT_FILE"
     fi
+  elif [[ "$ENDOR_PLUGIN_ANNOTATE" == "true" ]]; then
+    ENDOR_PLUGIN_CAPTURE_FILE="$(mktemp)"
+    endorctl "${args[@]}" >"$ENDOR_PLUGIN_CAPTURE_FILE"
   else
-    if [[ "$ENDOR_PLUGIN_ANNOTATE" == "true" ]]; then
-      ENDOR_PLUGIN_CAPTURE_FILE="$(mktemp)"
-      endorctl "${args[@]}" | tee "$ENDOR_PLUGIN_CAPTURE_FILE"
-    else
-      endorctl "${args[@]}"
-    fi
+    endorctl "${args[@]}"
   fi
 }
 
@@ -472,9 +471,6 @@ function run_repo_scan() {
 
   if [[ "$use_pr_flags" == true ]]; then
     args+=("--pr=true")
-    if [[ "$has_numeric_pr" == true ]]; then
-      args+=("--scm-pr-id=${bk_pr}")
-    fi
     if [[ -n "$explicit_bl" ]]; then
       args+=("--pr-baseline=${explicit_bl}")
     elif [[ "${ENDOR_PLUGIN_ENABLE_PR_COMMENTS:-}" != "true" ]]; then
@@ -490,6 +486,9 @@ function run_repo_scan() {
 
   if [[ "${ENDOR_PLUGIN_ENABLE_PR_COMMENTS:-false}" == "true" ]]; then
     args+=("--enable-pr-comments=true")
+    if [[ "$has_numeric_pr" == true ]]; then
+      args+=("--scm-pr-id=${bk_pr}")
+    fi
     local scm_ev="${ENDOR_PLUGIN_SCM_TOKEN_ENV}"
     # Value must never be logged; validation ensures the env var is set.
     args+=("--scm-token=${!scm_ev}")
@@ -1338,7 +1337,8 @@ function annotate_scan() {
     log_warn "endorlabs plugin: buildkite-agent annotate failed (missing agent token or not in a Buildkite job?); continuing"
   fi
 
-  if [[ -n "${ENDOR_PLUGIN_CAPTURE_FILE:-}" && -f "${ENDOR_PLUGIN_CAPTURE_FILE}" ]]; then
+  if [[ -n "${ENDOR_PLUGIN_CAPTURE_FILE:-}" && -f "${ENDOR_PLUGIN_CAPTURE_FILE}" \
+    && "${ENDOR_PLUGIN_CAPTURE_FILE}" != "${ENDOR_PLUGIN_OUTPUT_FILE:-}" ]]; then
     rm -f "${ENDOR_PLUGIN_CAPTURE_FILE}"
   fi
 }

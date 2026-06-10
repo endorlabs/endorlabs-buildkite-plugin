@@ -7,7 +7,7 @@ See [`plugin.yml`](../plugin.yml) for the full schema.
 
 **Recommended:** vendored plugin path + Buildkite cluster secrets (see
 [setup.md](setup.md)). For the public git plugin,
-use the full GitHub URL with release tag v0.1.6 (see [troubleshooting.md](troubleshooting.md)
+use the full GitHub URL with release tag v0.1.7 (see [troubleshooting.md](troubleshooting.md)
 for shorthand vs directory mirror).
 
 ## Buildkite: cluster secrets + vendored plugin
@@ -41,7 +41,7 @@ steps:
   - label: ":hammer: Build and scan"
     command: "make build"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -62,7 +62,7 @@ time. Pinning is recommended for reproducible builds.
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -79,7 +79,7 @@ can skip the download.
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -92,7 +92,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           aws_role_arn: "arn:aws:iam::123456789012:role/endorlabs-federation-role"
 ```
@@ -103,7 +103,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           enable_azure_managed_identity: true
 ```
@@ -114,7 +114,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           gcp_service_account: "endorlabs-federation@my-project.iam.gserviceaccount.com"
 ```
@@ -128,7 +128,7 @@ the scan to a sub-directory of the checkout.
 steps:
   - command: "./gradlew assemble"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -145,7 +145,7 @@ Enable additional scan kinds beyond dependencies.
 steps:
   - command: "./gradlew test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -175,15 +175,28 @@ optional `pipeline.layered-scans.yml`). Core plugin options: `use_bazel`,
 
 On PR-triggered pipelines, Buildkite sets `BUILDKITE_PULL_REQUEST` to the pull
 request number (digits only), and usually sets `BUILDKITE_BRANCH` and
-`BUILDKITE_PULL_REQUEST_BASE_BRANCH`. With `pr` omitted or `true`, the plugin
-maps these to `--detached-ref-name`, `--pr=true`, `--scm-pr-id`, and
-`--pr-baseline` (from the base branch when you do not override `pr_baseline`).
+`BUILDKITE_PULL_REQUEST_BASE_BRANCH`.
+
+Two endorctl flags are involved (see [PR scans](https://docs.endorlabs.com/scan/pr-scans)):
+
+- **`--pr`** — marks a PR scan (point-in-time CI, not main-branch monitoring).
+  The plugin sets `--pr=true` when `pr` is not `false` and either
+  `BUILDKITE_PULL_REQUEST` is numeric or `pr_baseline` is set.
+- **`--scm-pr-id`** — the SCM pull/merge request id (which PR to associate).
+  The plugin sets this only from numeric `BUILDKITE_PULL_REQUEST`. Required
+  with `--enable-pr-comments` for review comments.
+
+With `pr` omitted or `true` on a PR build, the plugin also maps
+`BUILDKITE_BRANCH` → `--detached-ref-name` and (unless `enable_pr_comments` or
+`pr_baseline` overrides) `BUILDKITE_PULL_REQUEST_BASE_BRANCH` → `--pr-baseline`.
+`--scm-pr-id` is set only when `enable_pr_comments: true` (from numeric
+`BUILDKITE_PULL_REQUEST`).
 
 ```yaml
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -192,13 +205,16 @@ steps:
 ## Explicit PR baseline
 
 When Buildkite does not populate the base branch (or you need a non-default
-target), set `pr_baseline` explicitly. It overrides `BUILDKITE_PULL_REQUEST_BASE_BRANCH`.
+target), set `pr_baseline` explicitly. It overrides `BUILDKITE_PULL_REQUEST_BASE_BRANCH`
+and also enables `--pr=true` even without a numeric `BUILDKITE_PULL_REQUEST`.
+In that case the plugin does **not** set `--scm-pr-id` — use a normal PR build
+(numeric `BUILDKITE_PULL_REQUEST`) when you need PR comments.
 
 ```yaml
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -217,7 +233,7 @@ merge target).
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -240,7 +256,7 @@ steps:
       # In real pipelines, inject via the secrets plugin or agent environment.
       ENDOR_SCM_TOKEN: "replace-with-secret"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -257,7 +273,7 @@ plugin option (the string is split on whitespace and appended verbatim).
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -272,7 +288,7 @@ Enable an annotation card with sanitized scan status.
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -289,7 +305,7 @@ path used for source scans.
 steps:
   - command: "docker build -t ghcr.io/acme/demo:${BUILDKITE_COMMIT} ."
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -309,7 +325,7 @@ using `as_ref`.
 steps:
   - command: "docker save ghcr.io/acme/base:latest -o /tmp/base-latest.tar"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -334,7 +350,7 @@ signing.
 steps:
   - command: "make release"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           mode: "sign"
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
@@ -353,7 +369,7 @@ steps:
 steps:
   - command: "make verify-release"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           mode: "verify"
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
@@ -368,7 +384,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.6:
+      - endorlabs#v0.1.7:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"

@@ -30,7 +30,7 @@ steps:
           annotate: true
 ```
 
-Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.6` (or `endorlabs#v0.1.6` after [directory sync](https://buildkite.com/docs/integrations/buildkite-plugins)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.7` (or `endorlabs#v0.1.7` after [directory sync](https://buildkite.com/docs/integrations/buildkite-plugins)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
 
 ## How it works
 
@@ -70,10 +70,17 @@ All keys, validation rules, and cloud keyless auth: [`plugin.yml`](plugin.yml). 
 | Buildkite env | endorctl |
 |---------------|----------|
 | `BUILDKITE_BRANCH` | `--detached-ref-name=` |
-| `BUILDKITE_PULL_REQUEST` (numeric) | `--pr=true`, `--scm-pr-id=` (unless `pr: false`) |
-| `BUILDKITE_PULL_REQUEST_BASE_BRANCH` | `--pr-baseline=` |
+| `BUILDKITE_PULL_REQUEST` (numeric) | `--pr=true` (unless `pr: false`) |
+| `BUILDKITE_PULL_REQUEST_BASE_BRANCH` | `--pr-baseline=` (unless `enable_pr_comments` or `pr_baseline` overrides) |
 
-PR comments need `enable_pr_comments` + `scm_token_env` — see [docs/troubleshooting.md](docs/troubleshooting.md).
+**PR scan flags** (see [PR scans](https://docs.endorlabs.com/scan/pr-scans)):
+
+| endorctl flag | Meaning | When the plugin sets it |
+|---------------|---------|-------------------------|
+| `--pr` | PR scan mode (point-in-time CI, not main monitoring) | Numeric `BUILDKITE_PULL_REQUEST`, or `pr_baseline` set, unless `pr: false` |
+| `--scm-pr-id` | Which PR/MR to associate (required for PR comments) | `enable_pr_comments: true` + numeric `BUILDKITE_PULL_REQUEST` |
+
+PR comments need `enable_pr_comments` + `scm_token_env` + a numeric `BUILDKITE_PULL_REQUEST` — see [docs/troubleshooting.md](docs/troubleshooting.md).
 
 ## Developing
 

@@ -163,13 +163,13 @@ teardown() {
   assert_output --partial "ran scan"
 }
 
-@test "BUILDKITE_PULL_REQUEST adds --pr and --scm-pr-id" {
+@test "BUILDKITE_PULL_REQUEST adds --pr without --scm-pr-id" {
   export BUILDKITE_BRANCH=feature/widgets
   export BUILDKITE_PULL_REQUEST=123
   export BUILDKITE_PULL_REQUEST_BASE_BRANCH=main
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --scm-pr-id=123 --pr-baseline=main : echo 'ran pr scan'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --pr-baseline=main : echo 'ran pr scan'"
 
   run "$PWD"/hooks/post-command
 
@@ -199,7 +199,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ENDORLABS_PR_BASELINE=develop
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --scm-pr-id=123 --pr-baseline=develop : echo 'ran pr scan'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --pr-baseline=develop : echo 'ran pr scan'"
 
   run "$PWD"/hooks/post-command
 
@@ -214,7 +214,7 @@ teardown() {
   unset BUILDKITE_PLUGIN_ENDORLABS_PR_BASELINE
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --scm-pr-id=123 --pr-baseline=main : echo 'ran pr scan'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --pr-baseline=main : echo 'ran pr scan'"
 
   run "$PWD"/hooks/post-command
 
@@ -229,7 +229,7 @@ teardown() {
   export BUILDKITE_PLUGIN_ENDORLABS_PR_INCREMENTAL=true
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --scm-pr-id=123 --pr-baseline=main --pr-incremental=true : echo 'ran incremental'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --pr-baseline=main --pr-incremental=true : echo 'ran incremental'"
 
   run "$PWD"/hooks/post-command
 
@@ -470,6 +470,21 @@ teardown() {
 
   assert_success
   assert_output --partial "annotation sent"
+  refute_output --partial '"summary"'
+}
+
+@test "annotate=true does not echo scan JSON to stdout" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"all_findings\":[{\"uuid\":\"leak-me\"}]}'"
+  stub buildkite-agent \
+    "annotate * --style success --context endorlabs-scan : echo 'annotation sent'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  refute_output --partial "leak-me"
 }
 
 @test "annotate=true uses endorlabs-container context for container scan" {

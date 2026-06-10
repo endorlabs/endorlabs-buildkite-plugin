@@ -328,8 +328,9 @@ configuration:
     output_file:
       type: string
       description: >-
-        Write scan JSON to this path (`--output-file`). Enables upload_artifacts
-        and rich annotate tables when annotate=true (requires jq).
+        Capture endorctl scan JSON stdout to this path (endorctl has no
+        --output-file flag). Suppresses JSON in the step log. Enables
+        upload_artifacts and rich annotate tables when annotate=true (requires jq).
     tags:
       type: string
       description: >-
@@ -346,8 +347,9 @@ configuration:
       default: false
       description: >-
         Publish an HTML summary via buildkite-agent annotate after the scan.
-        Includes severity counts, optional findings table, and artifact link.
-        No code snippets in annotations. See
+        Captures endorctl JSON stdout for the summary without dumping it into
+        the step log. Includes severity counts, optional findings table, and
+        artifact link when output_file is set. No code snippets in annotations. See
         [buildkite-agent annotate](https://buildkite.com/docs/agent/cli/reference/annotate) for more information.
     annotate_context:
       type: string
@@ -402,16 +404,19 @@ configuration:
     pr:
       type: boolean
       description: >-
-        When false, never enable PR scan flags even on pull-request builds
-        (numeric `BUILDKITE_PULL_REQUEST`). When true or omitted, PR mode is
-        enabled when Buildkite exposes a numeric pull request id, or when
-        pr_baseline is set (explicit baseline implies a PR-style scan). See
+        Controls endorctl `--pr` (PR scan mode — point-in-time CI, not main-branch
+        monitoring). When false, never pass `--pr` even on pull-request builds.
+        When true or omitted, the plugin sets `--pr=true` when `BUILDKITE_PULL_REQUEST`
+        is numeric or when `pr_baseline` is set. `--scm-pr-id` is set only when
+        `enable_pr_comments` is true (from numeric `BUILDKITE_PULL_REQUEST`). See
         [PR scans](https://docs.endorlabs.com/scan/pr-scans) for more information.
     pr_baseline:
       type: string
       description: >-
         Git ref for the merge target, for example `main`. Overrides
-        `BUILDKITE_PULL_REQUEST_BASE_BRANCH` when both are present. With
+        `BUILDKITE_PULL_REQUEST_BASE_BRANCH` when both are present. Setting this
+        also enables `--pr=true` without numeric `BUILDKITE_PULL_REQUEST`; use a
+        numeric PR build for `--scm-pr-id` and PR comments. With
         `enable_pr_comments`, endorctl can infer the baseline from the PR unless
         you set this explicitly. See
         [PR scans](https://docs.endorlabs.com/scan/pr-scans) for more information.
@@ -427,18 +432,24 @@ configuration:
       type: boolean
       default: false
       description: >-
-        Post findings as SCM review comments (`--enable-pr-comments=true`).
-        Requires a pull-request build (numeric `BUILDKITE_PULL_REQUEST`), pr not
-        false, and scm_token_env pointing to a non-empty token. See
+        Post findings as SCM review comments (`--enable-pr-comments=true`). This
+        is not a Buildkite-native feature: endorctl calls the SCM API (GitHub,
+        GitLab, or Bitbucket per the Endor project's `platform_source`) using
+        the registered repo identity plus `--scm-pr-id` and `--scm-token`.
+        Requires numeric `BUILDKITE_PULL_REQUEST` (mapped to `--scm-pr-id` for
+        the same repo as the Endor project), `pr` not false, and
+        `scm_token_env`. endorctl rejects `--pr-baseline` with this flag; the
+        merge target is fetched from the SCM PR/MR API, not from
+        `BUILDKITE_PULL_REQUEST_BASE_BRANCH`. See
         [PR comments](https://docs.endorlabs.com/scan/pr-scans/pr-comments) for more information.
     scm_token_env:
       type: string
       description: >-
         Name of an environment variable whose value is passed to endorctl as
-        `--scm-token` when `enable_pr_comments` is true. Supply an SCM PAT or
-        bot token (for example via Buildkite cluster secrets); Buildkite
-        pipeline OIDC is not used for PR comments. The token value is never
-        printed by the plugin. See
+        `--scm-token` when `enable_pr_comments` is true. For GitHub projects
+        use a PAT or bot token with `pull-requests: write`; for GitLab use a
+        token with `api` scope. Buildkite pipeline OIDC does not substitute for
+        SCM API auth. The token value is never printed by the plugin. See
         [PR comments](https://docs.endorlabs.com/scan/pr-scans/pr-comments) for more information.
     additional_args:
       type: string
