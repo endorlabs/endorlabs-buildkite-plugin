@@ -12,8 +12,8 @@ configuration:
       default: "scan"
       description: >-
         Plugin operation. scan runs endorctl scan or container scan (default).
-        sign and verify run artifact signing workflows; scan_* options are
-        invalid in those modes. See the
+        Sign and verify run artifact signing workflows, where scan_* options are
+        invalid. See the
         [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     namespace:
       type: string
@@ -29,8 +29,8 @@ configuration:
       type: string
       description: >-
         Name of a Buildkite secret env var holding the API key. The plugin
-        exports ENDOR_API_CREDENTIALS_KEY from its value; never passes `--api-key`
-        on the CLI. Use with `api_secret_env`. See the
+        exports `ENDOR_API_CREDENTIALS_KEY` from its value and never passes
+        `--api-key` on the CLI. Use with `api_secret_env`. See the
         [plugin security guide](https://github.com/endorlabs/endorlabs-buildkite-plugin/blob/main/SECURITY.md)
         and [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) for more information.
     api_secret_env:
@@ -66,8 +66,8 @@ configuration:
       default: true
       description: >-
         Software composition analysis (SCA): analyze declared and reachable
-        dependencies (`--dependencies=true`). Default true. At least one scan kind
-        must be enabled in mode=scan. See
+        dependencies (`--dependencies=true`). Defaults to true. At least one scan
+        kind must be enabled in scan mode. See
         [software composition analysis](https://docs.endorlabs.com/scan/sca) for more information.
     scan_secrets:
       type: boolean
@@ -113,17 +113,17 @@ configuration:
       type: boolean
       default: false
       description: >-
-        Scan a built artifact or package at scan_path (`--package=true`). Requires
-        `project_name` and `scan_path`; mutually exclusive with `scan_dependencies`,
+        Scan a built artifact or package at `scan_path` (`--package=true`). Requires
+        `project_name` and `scan_path`. Mutually exclusive with `scan_dependencies`,
         `scan_secrets`, `scan_sast`, and `scan_container`. See
         [scanning artifacts and binaries](https://docs.endorlabs.com/scan/sca/binary-artifact-scan) for more information.
     scan_container:
       type: boolean
       default: false
       description: >-
-        Run endorctl container scan instead of repository scan. Requires image or
-        `image_tar`; mutually exclusive with repository scan kinds — use a separate
-        step. See
+        Run endorctl container scan instead of repository scan. Requires `image` or
+        `image_tar`. Mutually exclusive with repository scan kinds, so use a
+        separate step. See
         [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     phantom_dependencies:
       type: boolean
@@ -144,7 +144,7 @@ configuration:
       default: false
       description: >-
         Enable Bazel-aware scan (`--use-bazel`). Requires bazel on the agent PATH
-        and a successful target prebuild in the step command; the plugin does not
+        and a successful target prebuild in the step command. The plugin does not
         install Bazel. See
         [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
     bazel_include_targets:
@@ -168,18 +168,20 @@ configuration:
       type: string
       description: >-
         Repository or artifact path to scan (`--path`). Defaults to the step
-        working directory when unset. Required when `scan_package=true`.
+        working directory when unset. Required when `scan_package=true`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     project_name:
       type: string
       description: >-
         Endor project name for container or package scans (`--project-name`).
-        Required when `scan_package=true`; optional for container scans.
+        Required when `scan_package=true`. Optional for container scans. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     image:
       type: string
       description: >-
-        Container image reference to scan (`--image`), e.g. alpine:3.19. Required
-        for `scan_container` unless `image_tar` is set. Mutually exclusive with
-        image_tar. See
+        Container image reference to scan (`--image`), for example `alpine:3.19`.
+        Required for `scan_container` unless `image_tar` is set. Mutually exclusive
+        with `image_tar`. See
         [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
     image_tar:
       type: string
@@ -288,7 +290,7 @@ configuration:
       type: boolean
       default: false
       description: >-
-        Skip downloading endorctl; use the binary already on PATH. Useful on
+        Skip downloading endorctl and use the binary already on PATH. Useful on
         custom agent images with a preinstalled CLI. See
         [installing and configuring endorctl](https://docs.endorlabs.com/developers-api/cli/install-and-configure) for more information.
     log_level:
@@ -296,7 +298,7 @@ configuration:
       enum: [ "debug", "info", "warn", "error", "fatal" ]
       default: info
       description: >-
-        endorctl log level (`--log-level`). Default info.
+        endorctl log level (`--log-level`). Defaults to info.
     log_verbose:
       type: boolean
       default: false
@@ -308,12 +310,14 @@ configuration:
       default: json
       description: >-
         Scan result format (`--output-type`). Use json for annotations and
-        machine-readable artifacts. Default json.
+        machine-readable artifacts. Defaults to json. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     sarif_file:
       type: string
       description: >-
         Write findings to a SARIF file at this path (`--sarif-file`). Enables
-        upload_artifacts when set.
+        `upload_artifacts` when set. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     output_file:
       type: string
       description: >-
@@ -359,9 +363,10 @@ configuration:
       type: integer
       default: -1
       description: >-
-        Findings table rows: -1 = all critical and high only; 0 = severity counts
-        with no table; N>0 = all critical/high plus up to N medium/low rows (by
-        severity). Requires jq and JSON scan output.
+        Number of findings table rows. -1 lists all critical and high findings,
+        0 shows severity counts with no table, and a positive value lists all
+        critical and high findings plus up to that many medium and low rows by
+        severity. Requires jq and JSON scan output.
     soft_fail:
       type: boolean
       default: false
@@ -398,7 +403,7 @@ configuration:
     pr_baseline:
       type: string
       description: >-
-        Git ref for the merge target (e.g. main). Overrides
+        Git ref for the merge target, for example `main`. Overrides
         `BUILDKITE_PULL_REQUEST_BASE_BRANCH` when both are present. With
         `enable_pr_comments`, endorctl can infer the baseline from the PR unless
         you set this explicitly. See
