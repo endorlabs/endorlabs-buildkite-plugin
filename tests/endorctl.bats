@@ -299,7 +299,7 @@ teardown() {
   export SCM_SECRET_ENV="glpat-super-secret-token-value"
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --scm-pr-id=123 --enable-pr-comments=true --scm-token=glpat-super-secret-token-value : echo 'ran comments scan'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --enable-pr-comments=true --scm-pr-id=123 --scm-token=glpat-super-secret-token-value : echo 'ran comments scan'"
 
   run "$PWD"/hooks/post-command
 
@@ -344,7 +344,7 @@ teardown() {
   export SCM_SECRET_ENV="tokenvalue"
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --scm-pr-id=123 --pr-incremental=true --enable-pr-comments=true --scm-token=tokenvalue : echo 'ran incremental comments'"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --detached-ref-name=feature/widgets --pr=true --pr-incremental=true --enable-pr-comments=true --scm-pr-id=123 --scm-token=tokenvalue : echo 'ran incremental comments'"
 
   run "$PWD"/hooks/post-command
 
