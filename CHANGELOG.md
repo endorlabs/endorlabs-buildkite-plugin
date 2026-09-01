@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-09-01
+
+### Fixed
+
+- Pipe Buildkite annotation HTML via stdin instead of argv to avoid E2BIG /
+  "Argument list too long" on large monorepo scans.
+- Accurate annotate failure warnings (no longer default to blaming missing agent token).
+
 ## [0.1.7] - 2026-06-09
 
 ### Changed

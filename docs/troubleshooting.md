@@ -109,7 +109,7 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   — Buildkite’s plugin shorthand points at the [plugin directory](https://buildkite.com/docs/pipelines/integrations/plugins/writing#step-2-add-the-plugin-to-your-pipeline)
   mirror until your release is synced. For the **`endorlabs/endorlabs-buildkite-plugin`**
   GitHub repo, use a single full URL:
-  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.7`
+  `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.8`
 - **Build failed but you expected only scan results** — `post-command` runs after your
   `command`. If Bazel/make fails, the step is red even when the plugin runs. Fix the
   build, or split scan into a separate step that depends on a successful build.
@@ -131,6 +131,10 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
 - **Only the last step’s annotation appears** when several steps use `annotate: true`
   with the default context (`endorlabs-scan`). Set a unique `annotate_context` per step
   (for example `endorlabs-bk-filesystem`, `endorlabs-bk-bazel`).
+- **Annotation failed with `Argument list too long` at `buildkite-agent annotate`**
+  — v0.1.7 did not fix this; upgrade to **v0.1.8+** (or vendor equivalent), which pipes
+  the HTML body via stdin. For very large scans, lower `annotate_findings_limit`; Buildkite
+  caps each annotation body at **1 MiB**.
 - **Finding count missing on the annotation** — install `jq` on the agent if you use
   `output_file` / JSON capture; without `jq`, status text still appears but counts may be omitted.
 - **Remote plugin uses the wrong ref** — do not use `BUILDKITE_BRANCH` of the
