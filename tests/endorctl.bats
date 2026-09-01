@@ -26,6 +26,15 @@ setup() {
   export FAKE_KEY="kkkkkkkk"
   export FAKE_SECRET="ssssssss"
 
+  # Reset per-test plugin overrides; individual tests opt in to extras.
+  local var
+  while IFS= read -r var; do
+    case "$var" in
+      BUILDKITE_PLUGIN_ENDORLABS_NAMESPACE|BUILDKITE_PLUGIN_ENDORLABS_API_KEY_ENV|BUILDKITE_PLUGIN_ENDORLABS_API_SECRET_ENV|BUILDKITE_PLUGIN_ENDORLABS_ENDORCTL_SKIP_INSTALL) ;;
+      BUILDKITE_PLUGIN_ENDORLABS_*) unset "$var" ;;
+    esac
+  done < <(compgen -e | grep '^BUILDKITE_PLUGIN_ENDORLABS_' || true)
+
   # Skip the network install by default; install path has its own test.
   export BUILDKITE_PLUGIN_ENDORLABS_ENDORCTL_SKIP_INSTALL=true
 }
@@ -450,7 +459,7 @@ teardown() {
   stub endorctl \
     "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":2}}}'"
   stub buildkite-agent \
-    "annotate * --style success --context endorlabs-scan : echo 'annotation sent'"
+    "annotate --style success --context endorlabs-scan : echo 'annotation sent'"
 
   run "$PWD"/hooks/post-command
 
@@ -464,7 +473,7 @@ teardown() {
   stub endorctl \
     "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":3}}}'"
   stub buildkite-agent \
-    "annotate * --style success --context endorlabs-scan : echo 'annotation sent'"
+    "annotate --style success --context endorlabs-scan : echo 'annotation sent'"
 
   run "$PWD"/hooks/post-command
 
@@ -479,7 +488,7 @@ teardown() {
   stub endorctl \
     "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"all_findings\":[{\"uuid\":\"leak-me\"}]}'"
   stub buildkite-agent \
-    "annotate * --style success --context endorlabs-scan : echo 'annotation sent'"
+    "annotate --style success --context endorlabs-scan : echo 'annotation sent'"
 
   run "$PWD"/hooks/post-command
 
@@ -496,7 +505,7 @@ teardown() {
   stub endorctl \
     "container scan --namespace=demo --output-type=json --log-level=info --verbose=false --image=alpine:3.19 --path=. : echo '{\"summary\":{\"findings\":{\"total\":1}}}'"
   stub buildkite-agent \
-    "annotate * --style success --context endorlabs-container : echo 'annotation sent'"
+    "annotate --style success --context endorlabs-container : echo 'annotation sent'"
 
   run "$PWD"/hooks/post-command
 
@@ -511,7 +520,7 @@ teardown() {
   stub endorctl \
     "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":2}}}'"
   stub buildkite-agent \
-    "annotate * --style success --context endorlabs-bk-filesystem : echo 'annotation sent'"
+    "annotate --style success --context endorlabs-bk-filesystem : echo 'annotation sent'"
 
   run "$PWD"/hooks/post-command
 
@@ -711,7 +720,7 @@ EOF
   stub endorctl \
     "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":1}}}'"
   stub buildkite-agent \
-    "annotate * --style success --context endorlabs-scan --scope job : echo 'job annotation'"
+    "annotate --style success --context endorlabs-scan --scope job : echo 'job annotation'"
 
   run "$PWD"/hooks/post-command
 
@@ -794,13 +803,11 @@ EOF
 
 @test "annotate=true uses error style for policy exit 128" {
   export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
-  export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE="${BATS_TEST_TMPDIR}/endor-out.json"
-  echo '{"summary":{"findings":{"total":1}}}' >"${BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_FILE}"
 
   stub endorctl \
-    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : exit 128"
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":1}}}'; exit 128"
   stub buildkite-agent \
-    "annotate * --style error --context endorlabs-scan : echo 'policy annotate'"
+    "annotate --style error --context endorlabs-scan : echo 'policy annotate'"
 
   run "$PWD"/hooks/post-command
 
@@ -817,8 +824,58 @@ EOF
   run "$PWD"/hooks/post-command
 
   assert_success
-  assert_output --partial "scan-ok"
   assert_output --partial "buildkite-agent is not available; skipping annotation"
+}
+
+@test "annotate_scan pipes large HTML body via stdin not argv" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
+
+  local json="${BATS_TEST_TMPDIR}/large-findings.json"
+  local body_file="${BATS_TEST_TMPDIR}/annotate-body.txt"
+  {
+    echo -n '{"all_findings":['
+    local i
+    for i in $(seq 1 80); do
+      if [[ "$i" -gt 1 ]]; then
+        echo -n ','
+      fi
+      printf '{"uuid":"finding-%s","context":{"id":"dev","type":"CONTEXT_TYPE_REF"},"tenant_meta":{"namespace":"acme"},"meta":{"description":"High severity finding number %s with extra annotation padding text"},"spec":{"level":"FINDING_LEVEL_HIGH","project_uuid":"proj1","finding_categories":["FINDING_CATEGORY_VULNERABILITY"],"target_dependency_name":"pkg-%s"}}' \
+        "$i" "$i" "$i"
+    done
+    echo ']}'
+  } >"${json}"
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : cat \"${json}\""
+  stub buildkite-agent \
+    "annotate --style success --context endorlabs-scan : cat > \"${body_file}\"; echo 'stdin annotate ok'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "stdin annotate ok"
+  [[ -f "${body_file}" ]]
+  local body_size
+  body_size="$(wc -c <"${body_file}" | tr -d ' ')"
+  [[ "${body_size}" -gt 8192 ]]
+  unstub buildkite-agent
+}
+
+@test "annotate failure with Argument list too long warns about body size not token" {
+  export BUILDKITE_PLUGIN_ENDORLABS_ANNOTATE=true
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo '{\"summary\":{\"findings\":{\"total\":1}}}'"
+  stub buildkite-agent \
+    "annotate --style success --context endorlabs-scan : echo 'Argument list too long' >&2; exit 126"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "annotation body exceeded the OS argument size limit"
+  assert_output --partial "annotate_findings_limit"
+  refute_output --partial "missing agent token"
+  unstub buildkite-agent
 }
 
 @test "upload_artifacts warns when artifact path is missing" {

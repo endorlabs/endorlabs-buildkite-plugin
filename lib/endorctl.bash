@@ -1231,6 +1231,33 @@ function _annotate_artifact_link_html() {
   echo "<p>$(_annotation_link_html "artifact://${escaped_path}" "📎 Download full scan JSON")</p>"
 }
 
+function _log_annotate_failure() {
+  local exit_code="$1"
+  local stderr_file="$2"
+  local stderr_content=""
+  if [[ -f "$stderr_file" ]]; then
+    stderr_content="$(<"$stderr_file")"
+  fi
+
+  if [[ "$stderr_content" == *"Argument list too long"* ]]; then
+    log_warn "endorlabs plugin: buildkite-agent annotate failed — annotation body exceeded the OS argument size limit; use a plugin version that pipes annotation via stdin, or reduce annotate_findings_limit; continuing"
+    return 0
+  fi
+
+  if [[ -z "${BUILDKITE_AGENT_ACCESS_TOKEN:-}" ]] \
+    && [[ "$stderr_content" == *"access token"* || "$stderr_content" == *"401"* || "$stderr_content" == *"403"* || "$stderr_content" == *"Unauthorized"* ]]; then
+    log_warn "endorlabs plugin: buildkite-agent annotate failed (BUILDKITE_AGENT_ACCESS_TOKEN unset or invalid); continuing"
+    return 0
+  fi
+
+  if [[ -z "${BUILDKITE_JOB_ID:-}" ]]; then
+    log_warn "endorlabs plugin: buildkite-agent annotate failed (not running in a Buildkite job?); continuing"
+    return 0
+  fi
+
+  log_warn "endorlabs plugin: buildkite-agent annotate failed (exit ${exit_code}); continuing"
+}
+
 function annotate_scan() {
   if [[ "$ENDOR_PLUGIN_ANNOTATE" != "true" ]]; then
     return 0
@@ -1327,15 +1354,22 @@ function annotate_scan() {
   local mode_icon annotation
   mode_icon="$(_scan_mode_icon)"
   annotation="<h3>${mode_icon} Endor Labs $(_escape_html "$mode_label")</h3><p>${escaped_message}</p>${details_html}"
-  local -a annotate_args=(annotate "$annotation" --style "$style" --context "$annotate_context")
+  local -a annotate_args=(annotate --style "$style" --context "$annotate_context")
   if [[ "${ENDOR_PLUGIN_ANNOTATE_SCOPE:-build}" == "job" ]]; then
     annotate_args+=(--scope job)
   fi
 
   log_focus ":endorlabs: Publishing Buildkite annotation (context=${annotate_context}, scope=${ENDOR_PLUGIN_ANNOTATE_SCOPE:-build})"
-  if ! buildkite-agent "${annotate_args[@]}"; then
-    log_warn "endorlabs plugin: buildkite-agent annotate failed (missing agent token or not in a Buildkite job?); continuing"
+  local annotate_stderr annotate_body_file annotate_exit=0
+  annotate_stderr="$(mktemp)"
+  annotate_body_file="$(mktemp)"
+  printf '%s' "$annotation" >"${annotate_body_file}"
+  buildkite-agent "${annotate_args[@]}" <"${annotate_body_file}" 2>"${annotate_stderr}" || annotate_exit=$?
+  rm -f "${annotate_body_file}"
+  if [[ "$annotate_exit" -ne 0 ]]; then
+    _log_annotate_failure "$annotate_exit" "${annotate_stderr}"
   fi
+  rm -f "${annotate_stderr}"
 
   if [[ -n "${ENDOR_PLUGIN_CAPTURE_FILE:-}" && -f "${ENDOR_PLUGIN_CAPTURE_FILE}" \
     && "${ENDOR_PLUGIN_CAPTURE_FILE}" != "${ENDOR_PLUGIN_OUTPUT_FILE:-}" ]]; then
