@@ -30,7 +30,7 @@ steps:
           annotate: true
 ```
 
-Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.8` (or `endorlabs#v0.1.8` after [directory sync](https://buildkite.com/docs/integrations/buildkite-plugins)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.9` (or `endorlabs#v0.1.9` after [directory sync](https://buildkite.com/docs/integrations/buildkite-plugins)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
 
 ## How it works
 
@@ -93,3 +93,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). E2E validation: vendored plugin in [repr
 ## License
 
 [Apache License 2.0](LICENSE).
+

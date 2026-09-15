@@ -85,6 +85,42 @@ configuration:
       description: >-
         Static application security testing (`--sast=true`). See
         [SAST scanning](https://docs.endorlabs.com/scan/sast) for more information.
+    scan_ai_sast:
+      type: boolean
+      default: false
+      description: >-
+        AI SAST detection agent (`--ai-sast=true`). Requires an Endor Code Pro
+        license. See
+        [AI SAST detection agent](https://docs.endorlabs.com/scan/sast) for more information.
+    ai_sast_analysis:
+      type: string
+      description: >-
+        AI triage of SAST findings (`--ai-sast-analysis`). Example value:
+        `agent-fallback`. Use with `scan_sast`. Requires an Endor Code Pro
+        license. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    ai_sast_analysis_timeout:
+      type: string
+      description: >-
+        Max duration for AI SAST analysis (`--ai-sast-analysis-timeout`), for
+        example `5m`. Use with `scan_sast`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    ai_sast_rescan:
+      type: boolean
+      default: false
+      description: >-
+        Re-analyze SAST findings from scratch (`--ai-sast-rescan=true`). Use
+        with `scan_sast` or `scan_ai_sast`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    diff_scope:
+      type: string
+      enum: [ "local", "baseline" ]
+      description: >-
+        Limit SAST, secrets, and AI SAST to changed files (`--diff-scope`).
+        `local` compares to HEAD; `baseline` compares to the default branch.
+        Cannot combine with `pre_commit_checks`, `local`, `scan_git_logs`, or
+        `force_rescan`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     scan_git_logs:
       type: boolean
       default: false
@@ -92,6 +128,45 @@ configuration:
         Deep secret scan of full git history (`--git-logs=true`). Requires
         scan_secrets=true. See
         [scanning for secrets](https://docs.endorlabs.com/scan/secrets/scan-secrets) for more information.
+    force_rescan:
+      type: boolean
+      default: false
+      description: >-
+        Force a full historical secrets rescan (`--force-rescan=true`). Use
+        with `scan_secrets`. See
+        [scanning for secrets](https://docs.endorlabs.com/scan/secrets/scan-secrets) for more information.
+    local:
+      type: boolean
+      default: false
+      description: >-
+        Scan the local filesystem for secrets (`--local=true`). Use with
+        `scan_secrets`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    pre_commit_checks:
+      type: boolean
+      default: false
+      description: >-
+        Git pre-commit secret checks on the pending changeset
+        (`--pre-commit-checks=true`). Use with `scan_secrets`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    start_commit:
+      type: string
+      description: >-
+        Start commit for git-log secret scanning (`--start-commit`). Use with
+        `scan_secrets` and `end_commit`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    end_commit:
+      type: string
+      description: >-
+        End commit for git-log secret scanning (`--end-commit`). Use with
+        `scan_secrets` and `start_commit`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    secret_rules_file:
+      type: string
+      description: >-
+        Path to a YAML secret rules file (`--secret-rules-file`). Use with
+        `scan_secrets` for `--pre-commit-checks` or `--local` scans. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     scan_github_actions:
       type: boolean
       default: false
@@ -140,8 +215,139 @@ configuration:
       default: false
       description: >-
         Do not store or display source snippets for findings
-        (`--disable-code-snippet-storage=true`). Requires `scan_sast=true`. See
+        (`--disable-code-snippet-storage=true`). Requires `scan_sast=true` or
+        `scan_ai_sast=true`. See
         [SAST scanning](https://docs.endorlabs.com/scan/sast) for more information.
+    dry_run:
+      type: boolean
+      default: false
+      description: >-
+        Run without storing scan results (`--dry-run=true`). Read-only API
+        access. Use with SCA, SAST, AI SAST, or secrets. With `scan_ai_sast`,
+        also set `diff_scope`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    quick_scan:
+      type: boolean
+      default: false
+      description: >-
+        Quick scan without call graph generation (`--quick-scan=true`). In
+        incremental PR scans, also skips dependency resolution for unaffected
+        packages. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    build:
+      type: boolean
+      default: false
+      description: >-
+        Allow endorctl to build the project when needed for call graphs
+        (`--build=true`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    call_graph_languages:
+      type: string
+      description: >-
+        Comma-separated languages for call graph generation
+        (`--call-graph-languages`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    disable_private_package_analysis:
+      type: boolean
+      default: false
+      description: >-
+        Skip call graph analysis of private dependencies outside the repo
+        (`--disable-private-package-analysis=true`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    languages:
+      type: string
+      description: >-
+        Comma-separated languages to scan (`--languages`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    segment_match_languages:
+      type: string
+      description: >-
+        Languages for segment-based analysis, including C/C++
+        (`--segment-match-languages`). Clears default languages; combine with
+        `languages` for additional ecosystems. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    include_path:
+      type: string
+      description: >-
+        Glob path(s) to include (`--include-path`). Relative to the repo root.
+        See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    exclude_path:
+      type: string
+      description: >-
+        Glob path(s) to exclude (`--exclude-path`). Relative to the repo root.
+        See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    finding_tags:
+      type: string
+      description: >-
+        Comma-separated tags added to findings from this scan
+        (`--finding-tags`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    registries:
+      type: string
+      description: >-
+        Extra package registries (`--registries`). Format
+        `user:password@ecosystem://registry#priority`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    use_local_repo_cache:
+      type: boolean
+      default: false
+      description: >-
+        Use the local dependency cache for resolution (`--use-local-repo-cache`).
+        See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    as_default_branch:
+      type: boolean
+      default: false
+      description: >-
+        Treat this scan as the default branch (`--as-default-branch=true`). See
+        the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    uuid:
+      type: string
+      description: >-
+        Scan against an existing project UUID (`--uuid`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    install_build_tools:
+      type: boolean
+      default: false
+      description: >-
+        Install build tools in a self-contained sandbox
+        (`--install-build-tools=true`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    use_scan_profile:
+      type: boolean
+      default: false
+      description: >-
+        Run the scan in a sandbox using a scan profile
+        (`--use-scan-profile=true`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    scan_github:
+      type: boolean
+      default: false
+      description: >-
+        Fetch GitHub repo config and generate RSPM findings (`--github=true`).
+        Requires `scm_token_env` and usually `repository_http_clone_url`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    github_api_url:
+      type: string
+      description: >-
+        GitHub API URL for GHES / GHEC (`--github-api-url`). Defaults to
+        `https://api.github.com/`. See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    github_ca_path:
+      type: string
+      description: >-
+        CA certificate path for GitHub Enterprise Server (`--github-ca-path`).
+        See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    repository_http_clone_url:
+      type: string
+      description: >-
+        GitHub repository HTTP clone URL for `--github` scans
+        (`--repository-http-clone-url`). See the
+        [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     use_bazel:
       type: boolean
       default: false
@@ -166,6 +372,45 @@ configuration:
       description: >-
         Bazel query for target discovery (`--bazel-targets-query`). Ignored when
         bazel_include_targets is set. See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
+    bazel_show_internal_targets:
+      type: boolean
+      default: false
+      description: >-
+        Include first-party library targets (`py_library`, `java_library`,
+        `go_library`, and similar) as dependencies (`--bazel-show-internal-targets`).
+        Requires `use_bazel`. Does not change Bzlmod vs WORKSPACE query behavior;
+        use `use_bazel_aspects` for Bzlmod workspaces. See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
+    use_bazel_aspects:
+      type: boolean
+      default: false
+      description: >-
+        Enable the Bazel Aspects Framework (`--use-bazel-aspects`). Required for
+        Bzlmod-based workspaces. Use with `use_bazel`. See
+        [Bazel Aspects](https://docs.endorlabs.com/scan/bazel/bazel-aspects) for more information.
+    bazel_workspace_path:
+      type: string
+      description: >-
+        Path to a non-root Bazel workspace (`--bazel-workspace-path`). See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
+    bazel_vendor_manifest_path:
+      type: string
+      description: >-
+        Path to `go.mod` when using Bazel with Gazelle in vendored mode
+        (`--bazel-vendor-manifest-path`). See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
+    bazel_rc_path:
+      type: string
+      description: >-
+        Comma-separated paths to custom `.bazelrc` files relative to the repo
+        root (`--bazel-rc-path`). Later files win on conflicting options. See
+        [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
+    bazel_flags:
+      type: string
+      description: >-
+        Extra Bazel CLI flags as comma-separated `key=value` pairs
+        (`--bazel-flags`). Applied to `bazel build` during the scan. See
         [Bazel scanning](https://docs.endorlabs.com/scan/bazel) for more information.
     scan_path:
       type: string
@@ -446,16 +691,17 @@ configuration:
       type: string
       description: >-
         Name of an environment variable whose value is passed to endorctl as
-        `--scm-token` when `enable_pr_comments` is true. For GitHub projects
-        use a PAT or bot token with `pull-requests: write`; for GitLab use a
-        token with `api` scope. Buildkite pipeline OIDC does not substitute for
-        SCM API auth. The token value is never printed by the plugin. See
+        `--scm-token` when `enable_pr_comments` or `scan_github` is true. For
+        GitHub projects use a PAT or bot token with `pull-requests: write`; for
+        GitLab use a token with `api` scope. Buildkite pipeline OIDC does not
+        substitute for SCM API auth. The token value is never printed by the
+        plugin. See
         [PR comments](https://docs.endorlabs.com/scan/pr-scans/pr-comments) for more information.
     additional_args:
       type: string
       description: >-
-        Extra endorctl arguments appended verbatim (space-separated). Use for
-        flags not yet exposed as plugin keys. Do not use for
+        Extra endorctl arguments appended verbatim (space-separated). Prefer
+        first-class plugin keys when available. Do not use for
         `--enable-github-action-token` on Buildkite — that flag is for GitHub
         Actions OIDC only. endorctl has no Buildkite OIDC API-auth equivalent;
         use API credentials or cloud keyless options instead. See the

@@ -4,6 +4,29 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-09-15
+
+### Added
+
+- First-class Bazel scan options aligned with endorctl: `bazel_show_internal_targets`,
+  `use_bazel_aspects`, `bazel_workspace_path`, `bazel_vendor_manifest_path`,
+  `bazel_rc_path`, and `bazel_flags` (Bzlmod workspaces should set `use_bazel_aspects`).
+- Additional documented `endorctl scan` options: `dry_run`, `quick_scan`, `build`,
+  `call_graph_languages`, `disable_private_package_analysis`, `languages`,
+  `segment_match_languages`, `include_path`, `exclude_path`, `finding_tags`,
+  `registries`, `use_local_repo_cache`, `as_default_branch`, `uuid`,
+  `install_build_tools`, `use_scan_profile`, secrets helpers (`force_rescan`,
+  `local`, `pre_commit_checks`, `start_commit`, `end_commit`, `secret_rules_file`),
+  SAST/AI SAST (`scan_ai_sast`, `ai_sast_analysis`, `ai_sast_analysis_timeout`,
+  `ai_sast_rescan`, `diff_scope`), and GitHub RSPM (`scan_github`, `github_api_url`,
+  `github_ca_path`, `repository_http_clone_url`).
+
+### Changed
+
+- `scm_token_env` also supplies `--scm-token` for `scan_github` scans.
+- Annotation scan-kind detection recognizes first-class `scan_ai_sast` /
+  `ai_sast_analysis` (not only `additional_args`).
+
 ## [0.1.8] - 2026-09-01
 
 ### Fixed

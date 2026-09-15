@@ -32,18 +32,55 @@ function configure_endorctl() {
   ENDOR_PLUGIN_SCAN_DEPENDENCIES="$(plugin_read_config SCAN_DEPENDENCIES "true")"
   ENDOR_PLUGIN_SCAN_SECRETS="$(plugin_read_config SCAN_SECRETS "false")"
   ENDOR_PLUGIN_SCAN_SAST="$(plugin_read_config SCAN_SAST "false")"
+  ENDOR_PLUGIN_SCAN_AI_SAST="$(plugin_read_config SCAN_AI_SAST "false")"
+  ENDOR_PLUGIN_AI_SAST_ANALYSIS="$(plugin_read_config AI_SAST_ANALYSIS)"
+  ENDOR_PLUGIN_AI_SAST_ANALYSIS_TIMEOUT="$(plugin_read_config AI_SAST_ANALYSIS_TIMEOUT)"
+  ENDOR_PLUGIN_AI_SAST_RESCAN="$(plugin_read_config AI_SAST_RESCAN "false")"
+  ENDOR_PLUGIN_DIFF_SCOPE="$(plugin_read_config DIFF_SCOPE)"
   ENDOR_PLUGIN_SCAN_GIT_LOGS="$(plugin_read_config SCAN_GIT_LOGS "false")"
+  ENDOR_PLUGIN_FORCE_RESCAN="$(plugin_read_config FORCE_RESCAN "false")"
+  ENDOR_PLUGIN_LOCAL="$(plugin_read_config LOCAL "false")"
+  ENDOR_PLUGIN_PRE_COMMIT_CHECKS="$(plugin_read_config PRE_COMMIT_CHECKS "false")"
+  ENDOR_PLUGIN_START_COMMIT="$(plugin_read_config START_COMMIT)"
+  ENDOR_PLUGIN_END_COMMIT="$(plugin_read_config END_COMMIT)"
+  ENDOR_PLUGIN_SECRET_RULES_FILE="$(plugin_read_config SECRET_RULES_FILE)"
   ENDOR_PLUGIN_SCAN_GITHUB_ACTIONS="$(plugin_read_config SCAN_GITHUB_ACTIONS "false")"
+  ENDOR_PLUGIN_SCAN_GITHUB="$(plugin_read_config SCAN_GITHUB "false")"
+  ENDOR_PLUGIN_GITHUB_API_URL="$(plugin_read_config GITHUB_API_URL)"
+  ENDOR_PLUGIN_GITHUB_CA_PATH="$(plugin_read_config GITHUB_CA_PATH)"
+  ENDOR_PLUGIN_REPOSITORY_HTTP_CLONE_URL="$(plugin_read_config REPOSITORY_HTTP_CLONE_URL)"
   ENDOR_PLUGIN_SCAN_AI_MODELS="$(plugin_read_config SCAN_AI_MODELS "false")"
   ENDOR_PLUGIN_SCAN_TOOLS="$(plugin_read_config SCAN_TOOLS "false")"
   ENDOR_PLUGIN_SCAN_PACKAGE="$(plugin_read_config SCAN_PACKAGE "false")"
   ENDOR_PLUGIN_SCAN_CONTAINER="$(plugin_read_config SCAN_CONTAINER "false")"
   ENDOR_PLUGIN_PHANTOM_DEPENDENCIES="$(plugin_read_config PHANTOM_DEPENDENCIES "false")"
   ENDOR_PLUGIN_DISABLE_CODE_SNIPPET_STORAGE="$(plugin_read_config DISABLE_CODE_SNIPPET_STORAGE "false")"
+  ENDOR_PLUGIN_DRY_RUN="$(plugin_read_config DRY_RUN "false")"
+  ENDOR_PLUGIN_QUICK_SCAN="$(plugin_read_config QUICK_SCAN "false")"
+  ENDOR_PLUGIN_BUILD="$(plugin_read_config BUILD "false")"
+  ENDOR_PLUGIN_CALL_GRAPH_LANGUAGES="$(plugin_read_config CALL_GRAPH_LANGUAGES)"
+  ENDOR_PLUGIN_DISABLE_PRIVATE_PACKAGE_ANALYSIS="$(plugin_read_config DISABLE_PRIVATE_PACKAGE_ANALYSIS "false")"
+  ENDOR_PLUGIN_LANGUAGES="$(plugin_read_config LANGUAGES)"
+  ENDOR_PLUGIN_SEGMENT_MATCH_LANGUAGES="$(plugin_read_config SEGMENT_MATCH_LANGUAGES)"
+  ENDOR_PLUGIN_INCLUDE_PATH="$(plugin_read_config INCLUDE_PATH)"
+  ENDOR_PLUGIN_EXCLUDE_PATH="$(plugin_read_config EXCLUDE_PATH)"
+  ENDOR_PLUGIN_FINDING_TAGS="$(plugin_read_config FINDING_TAGS)"
+  ENDOR_PLUGIN_REGISTRIES="$(plugin_read_config REGISTRIES)"
+  ENDOR_PLUGIN_USE_LOCAL_REPO_CACHE="$(plugin_read_config USE_LOCAL_REPO_CACHE "false")"
+  ENDOR_PLUGIN_AS_DEFAULT_BRANCH="$(plugin_read_config AS_DEFAULT_BRANCH "false")"
+  ENDOR_PLUGIN_UUID="$(plugin_read_config UUID)"
+  ENDOR_PLUGIN_INSTALL_BUILD_TOOLS="$(plugin_read_config INSTALL_BUILD_TOOLS "false")"
+  ENDOR_PLUGIN_USE_SCAN_PROFILE="$(plugin_read_config USE_SCAN_PROFILE "false")"
   ENDOR_PLUGIN_USE_BAZEL="$(plugin_read_config USE_BAZEL "false")"
   ENDOR_PLUGIN_BAZEL_INCLUDE_TARGETS="$(plugin_read_config BAZEL_INCLUDE_TARGETS)"
   ENDOR_PLUGIN_BAZEL_EXCLUDE_TARGETS="$(plugin_read_config BAZEL_EXCLUDE_TARGETS)"
   ENDOR_PLUGIN_BAZEL_TARGETS_QUERY="$(plugin_read_config BAZEL_TARGETS_QUERY)"
+  ENDOR_PLUGIN_BAZEL_SHOW_INTERNAL_TARGETS="$(plugin_read_config BAZEL_SHOW_INTERNAL_TARGETS "false")"
+  ENDOR_PLUGIN_USE_BAZEL_ASPECTS="$(plugin_read_config USE_BAZEL_ASPECTS "false")"
+  ENDOR_PLUGIN_BAZEL_WORKSPACE_PATH="$(plugin_read_config BAZEL_WORKSPACE_PATH)"
+  ENDOR_PLUGIN_BAZEL_VENDOR_MANIFEST_PATH="$(plugin_read_config BAZEL_VENDOR_MANIFEST_PATH)"
+  ENDOR_PLUGIN_BAZEL_RC_PATH="$(plugin_read_config BAZEL_RC_PATH)"
+  ENDOR_PLUGIN_BAZEL_FLAGS="$(plugin_read_config BAZEL_FLAGS)"
   ENDOR_PLUGIN_PROJECT_NAME="$(plugin_read_config PROJECT_NAME)"
   ENDOR_PLUGIN_IMAGE="$(plugin_read_config IMAGE)"
   ENDOR_PLUGIN_IMAGE_TAR="$(plugin_read_config IMAGE_TAR)"
@@ -397,17 +434,62 @@ function run_repo_scan() {
   if [[ "$ENDOR_PLUGIN_SCAN_SAST" == "true" ]]; then
     args+=("--sast=true")
   fi
+  if [[ "$ENDOR_PLUGIN_SCAN_AI_SAST" == "true" ]]; then
+    args+=("--ai-sast=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_AI_SAST_ANALYSIS" ]]; then
+    args+=("--ai-sast-analysis=${ENDOR_PLUGIN_AI_SAST_ANALYSIS}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_AI_SAST_ANALYSIS_TIMEOUT" ]]; then
+    args+=("--ai-sast-analysis-timeout=${ENDOR_PLUGIN_AI_SAST_ANALYSIS_TIMEOUT}")
+  fi
+  if [[ "$ENDOR_PLUGIN_AI_SAST_RESCAN" == "true" ]]; then
+    args+=("--ai-sast-rescan=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_DIFF_SCOPE" ]]; then
+    args+=("--diff-scope=${ENDOR_PLUGIN_DIFF_SCOPE}")
+  fi
   if [[ "$ENDOR_PLUGIN_SCAN_TOOLS" == "true" ]]; then
     args+=("--tools=true")
   fi
   if [[ "$ENDOR_PLUGIN_SCAN_GITHUB_ACTIONS" == "true" ]]; then
     args+=("--ghactions=true")
   fi
+  if [[ "$ENDOR_PLUGIN_SCAN_GITHUB" == "true" ]]; then
+    args+=("--github=true")
+    if [[ -n "$ENDOR_PLUGIN_GITHUB_API_URL" ]]; then
+      args+=("--github-api-url=${ENDOR_PLUGIN_GITHUB_API_URL}")
+    fi
+    if [[ -n "$ENDOR_PLUGIN_GITHUB_CA_PATH" ]]; then
+      args+=("--github-ca-path=${ENDOR_PLUGIN_GITHUB_CA_PATH}")
+    fi
+    if [[ -n "$ENDOR_PLUGIN_REPOSITORY_HTTP_CLONE_URL" ]]; then
+      args+=("--repository-http-clone-url=${ENDOR_PLUGIN_REPOSITORY_HTTP_CLONE_URL}")
+    fi
+  fi
   if [[ "$ENDOR_PLUGIN_SCAN_AI_MODELS" == "true" ]]; then
     args+=("--ai-models=true")
   fi
   if [[ "$ENDOR_PLUGIN_SCAN_GIT_LOGS" == "true" ]]; then
     args+=("--git-logs=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_FORCE_RESCAN" == "true" ]]; then
+    args+=("--force-rescan=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_LOCAL" == "true" ]]; then
+    args+=("--local=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_PRE_COMMIT_CHECKS" == "true" ]]; then
+    args+=("--pre-commit-checks=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_START_COMMIT" ]]; then
+    args+=("--start-commit=${ENDOR_PLUGIN_START_COMMIT}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_END_COMMIT" ]]; then
+    args+=("--end-commit=${ENDOR_PLUGIN_END_COMMIT}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_SECRET_RULES_FILE" ]]; then
+    args+=("--secret-rules-file=${ENDOR_PLUGIN_SECRET_RULES_FILE}")
   fi
   if [[ "$ENDOR_PLUGIN_SCAN_PACKAGE" == "true" ]]; then
     args+=("--package=true")
@@ -421,6 +503,54 @@ function run_repo_scan() {
   if [[ "$ENDOR_PLUGIN_DISABLE_CODE_SNIPPET_STORAGE" == "true" ]]; then
     args+=("--disable-code-snippet-storage=true")
   fi
+  if [[ "$ENDOR_PLUGIN_DRY_RUN" == "true" ]]; then
+    args+=("--dry-run=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_QUICK_SCAN" == "true" ]]; then
+    args+=("--quick-scan=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_BUILD" == "true" ]]; then
+    args+=("--build=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_CALL_GRAPH_LANGUAGES" ]]; then
+    args+=("--call-graph-languages=${ENDOR_PLUGIN_CALL_GRAPH_LANGUAGES}")
+  fi
+  if [[ "$ENDOR_PLUGIN_DISABLE_PRIVATE_PACKAGE_ANALYSIS" == "true" ]]; then
+    args+=("--disable-private-package-analysis=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_LANGUAGES" ]]; then
+    args+=("--languages=${ENDOR_PLUGIN_LANGUAGES}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_SEGMENT_MATCH_LANGUAGES" ]]; then
+    args+=("--segment-match-languages=${ENDOR_PLUGIN_SEGMENT_MATCH_LANGUAGES}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_INCLUDE_PATH" ]]; then
+    args+=("--include-path=${ENDOR_PLUGIN_INCLUDE_PATH}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_EXCLUDE_PATH" ]]; then
+    args+=("--exclude-path=${ENDOR_PLUGIN_EXCLUDE_PATH}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_FINDING_TAGS" ]]; then
+    args+=("--finding-tags=${ENDOR_PLUGIN_FINDING_TAGS}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_REGISTRIES" ]]; then
+    args+=("--registries=${ENDOR_PLUGIN_REGISTRIES}")
+  fi
+  if [[ "$ENDOR_PLUGIN_USE_LOCAL_REPO_CACHE" == "true" ]]; then
+    args+=("--use-local-repo-cache=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_AS_DEFAULT_BRANCH" == "true" ]]; then
+    args+=("--as-default-branch=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_UUID" ]]; then
+    args+=("--uuid=${ENDOR_PLUGIN_UUID}")
+  fi
+  if [[ "$ENDOR_PLUGIN_INSTALL_BUILD_TOOLS" == "true" ]]; then
+    args+=("--install-build-tools=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_USE_SCAN_PROFILE" == "true" ]]; then
+    args+=("--use-scan-profile=true")
+  fi
   if [[ "$ENDOR_PLUGIN_USE_BAZEL" == "true" ]]; then
     args+=("--use-bazel=true")
     if [[ -n "$ENDOR_PLUGIN_BAZEL_INCLUDE_TARGETS" ]]; then
@@ -432,6 +562,24 @@ function run_repo_scan() {
     # endorctl rejects --bazel-targets-query together with --bazel-include-targets.
     if [[ -n "$ENDOR_PLUGIN_BAZEL_TARGETS_QUERY" ]] && ! plugin_bazel_include_targets_configured; then
       args+=("--bazel-targets-query=${ENDOR_PLUGIN_BAZEL_TARGETS_QUERY}")
+    fi
+    if [[ "$ENDOR_PLUGIN_BAZEL_SHOW_INTERNAL_TARGETS" == "true" ]]; then
+      args+=("--bazel-show-internal-targets=true")
+    fi
+    if [[ "$ENDOR_PLUGIN_USE_BAZEL_ASPECTS" == "true" ]]; then
+      args+=("--use-bazel-aspects=true")
+    fi
+    if [[ -n "$ENDOR_PLUGIN_BAZEL_WORKSPACE_PATH" ]]; then
+      args+=("--bazel-workspace-path=${ENDOR_PLUGIN_BAZEL_WORKSPACE_PATH}")
+    fi
+    if [[ -n "$ENDOR_PLUGIN_BAZEL_VENDOR_MANIFEST_PATH" ]]; then
+      args+=("--bazel-vendor-manifest-path=${ENDOR_PLUGIN_BAZEL_VENDOR_MANIFEST_PATH}")
+    fi
+    if [[ -n "$ENDOR_PLUGIN_BAZEL_RC_PATH" ]]; then
+      args+=("--bazel-rc-path=${ENDOR_PLUGIN_BAZEL_RC_PATH}")
+    fi
+    if [[ -n "$ENDOR_PLUGIN_BAZEL_FLAGS" ]]; then
+      args+=("--bazel-flags=${ENDOR_PLUGIN_BAZEL_FLAGS}")
     fi
   fi
 
@@ -489,9 +637,14 @@ function run_repo_scan() {
     if [[ "$has_numeric_pr" == true ]]; then
       args+=("--scm-pr-id=${bk_pr}")
     fi
+  fi
+
+  # scm-token for PR comments and/or --github RSPM scans (value never logged).
+  if [[ "${ENDOR_PLUGIN_ENABLE_PR_COMMENTS:-false}" == "true" || "${ENDOR_PLUGIN_SCAN_GITHUB:-false}" == "true" ]]; then
     local scm_ev="${ENDOR_PLUGIN_SCM_TOKEN_ENV}"
-    # Value must never be logged; validation ensures the env var is set.
-    args+=("--scm-token=${!scm_ev}")
+    if [[ -n "$scm_ev" ]]; then
+      args+=("--scm-token=${!scm_ev}")
+    fi
   fi
 
   if [[ -n "$ENDOR_PLUGIN_TAGS" ]]; then
@@ -753,7 +906,7 @@ function _scan_mode_icon() {
     echo "🐳"
   elif [[ "${ENDOR_PLUGIN_SCAN_SECRETS:-false}" == "true" ]]; then
     echo "🔑"
-  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]]; then
+  elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" || "${ENDOR_PLUGIN_SCAN_AI_SAST:-false}" == "true" ]]; then
     echo "📝"
   elif [[ "${ENDOR_PLUGIN_SCAN_AI_MODELS:-false}" == "true" ]]; then
     echo "🤖"
@@ -791,7 +944,13 @@ function _endor_annotation_filter_json() {
     categories+=(FINDING_CATEGORY_SECRETS)
     admission_patterns+=(Secret)
   elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]] \
-    && [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; then
+    && { [[ "${ENDOR_PLUGIN_SCAN_AI_SAST:-false}" == "true" ]] \
+      || [[ -n "${ENDOR_PLUGIN_AI_SAST_ANALYSIS:-}" ]] \
+      || [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; }; then
+    categories+=(FINDING_CATEGORY_SAST)
+    require_ai="true"
+    admission_patterns+=(SAST)
+  elif [[ "${ENDOR_PLUGIN_SCAN_AI_SAST:-false}" == "true" ]]; then
     categories+=(FINDING_CATEGORY_SAST)
     require_ai="true"
     admission_patterns+=(SAST)
@@ -864,7 +1023,11 @@ function _endor_annotation_table_mode() {
   elif [[ "${ENDOR_PLUGIN_SCAN_SECRETS:-false}" == "true" ]]; then
     echo "secrets"
   elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]] \
-    && [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; then
+    && { [[ "${ENDOR_PLUGIN_SCAN_AI_SAST:-false}" == "true" ]] \
+      || [[ -n "${ENDOR_PLUGIN_AI_SAST_ANALYSIS:-}" ]] \
+      || [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; }; then
+    echo "ai-sast"
+  elif [[ "${ENDOR_PLUGIN_SCAN_AI_SAST:-false}" == "true" ]]; then
     echo "ai-sast"
   elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]]; then
     echo "sast"
@@ -1015,7 +1178,11 @@ function _endor_scan_mode_label() {
   elif [[ "${ENDOR_PLUGIN_SCAN_SECRETS:-false}" == "true" ]]; then
     echo "secrets scan"
   elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]] \
-    && [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; then
+    && { [[ "${ENDOR_PLUGIN_SCAN_AI_SAST:-false}" == "true" ]] \
+      || [[ -n "${ENDOR_PLUGIN_AI_SAST_ANALYSIS:-}" ]] \
+      || [[ "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast"* || "${ENDOR_PLUGIN_ADDITIONAL_ARGS:-}" == *"--ai-sast-analysis"* ]]; }; then
+    echo "AI-SAST scan"
+  elif [[ "${ENDOR_PLUGIN_SCAN_AI_SAST:-false}" == "true" ]]; then
     echo "AI-SAST scan"
   elif [[ "${ENDOR_PLUGIN_SCAN_SAST:-false}" == "true" ]]; then
     echo "SAST scan"
