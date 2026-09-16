@@ -12,12 +12,19 @@ function validate_scan_config() {
   local scan_dependencies="${ENDOR_PLUGIN_SCAN_DEPENDENCIES:-false}"
   local scan_secrets="${ENDOR_PLUGIN_SCAN_SECRETS:-false}"
   local scan_sast="${ENDOR_PLUGIN_SCAN_SAST:-false}"
+  local scan_ai_sast="${ENDOR_PLUGIN_SCAN_AI_SAST:-false}"
   local scan_tools="${ENDOR_PLUGIN_SCAN_TOOLS:-false}"
   local scan_package="${ENDOR_PLUGIN_SCAN_PACKAGE:-false}"
   local scan_github_actions="${ENDOR_PLUGIN_SCAN_GITHUB_ACTIONS:-false}"
+  local scan_github="${ENDOR_PLUGIN_SCAN_GITHUB:-false}"
   local scan_ai_models="${ENDOR_PLUGIN_SCAN_AI_MODELS:-false}"
   local scan_git_logs="${ENDOR_PLUGIN_SCAN_GIT_LOGS:-false}"
+  local force_rescan="${ENDOR_PLUGIN_FORCE_RESCAN:-false}"
+  local local_secrets="${ENDOR_PLUGIN_LOCAL:-false}"
+  local pre_commit_checks="${ENDOR_PLUGIN_PRE_COMMIT_CHECKS:-false}"
   local disable_code_snippet_storage="${ENDOR_PLUGIN_DISABLE_CODE_SNIPPET_STORAGE:-false}"
+  local dry_run="${ENDOR_PLUGIN_DRY_RUN:-false}"
+  local diff_scope="${ENDOR_PLUGIN_DIFF_SCOPE:-}"
   local scan_container="${ENDOR_PLUGIN_SCAN_CONTAINER:-false}"
   local api_key_env="${ENDOR_PLUGIN_API_KEY_ENV:-}"
   local api_secret_env="${ENDOR_PLUGIN_API_SECRET_ENV:-}"
@@ -30,7 +37,7 @@ function validate_scan_config() {
   fi
 
   if [[ "$mode" == "sign" || "$mode" == "verify" ]]; then
-    if _is_true "$scan_dependencies" || _is_true "$scan_secrets" || _is_true "$scan_sast" || _is_true "$scan_tools" || _is_true "$scan_package" || _is_true "$scan_github_actions" || _is_true "$scan_container"; then
+    if _is_true "$scan_dependencies" || _is_true "$scan_secrets" || _is_true "$scan_sast" || _is_true "$scan_ai_sast" || _is_true "$scan_tools" || _is_true "$scan_package" || _is_true "$scan_github_actions" || _is_true "$scan_github" || _is_true "$scan_container"; then
       log_fatal "endorlabs plugin: scan_* options are only valid in mode=scan"
     fi
     if [[ -z "${ENDOR_PLUGIN_ARTIFACT_NAME:-}" ]]; then
@@ -49,27 +56,36 @@ function validate_scan_config() {
     scan_dependencies="false"
     scan_secrets="false"
     scan_sast="false"
+    scan_ai_sast="false"
     scan_tools="false"
     scan_package="false"
     scan_github_actions="false"
+    scan_github="false"
     scan_ai_models="false"
     scan_git_logs="false"
+    force_rescan="false"
+    local_secrets="false"
+    pre_commit_checks="false"
     disable_code_snippet_storage="false"
+    dry_run="false"
+    diff_scope=""
     scan_container="false"
   fi
 
   if [[ "$mode" == "scan" ]] && ! _is_true "$scan_dependencies" \
     && ! _is_true "$scan_secrets" \
     && ! _is_true "$scan_sast" \
+    && ! _is_true "$scan_ai_sast" \
     && ! _is_true "$scan_tools" \
     && ! _is_true "$scan_package" \
     && ! _is_true "$scan_github_actions" \
+    && ! _is_true "$scan_github" \
     && ! _is_true "$scan_container"; then
-    log_fatal "endorlabs plugin: at least one scan kind must be enabled (scan_dependencies, scan_secrets, scan_sast, scan_tools, scan_github_actions, scan_package, or scan_container)"
+    log_fatal "endorlabs plugin: at least one scan kind must be enabled (scan_dependencies, scan_secrets, scan_sast, scan_ai_sast, scan_tools, scan_github_actions, scan_github, scan_package, or scan_container)"
   fi
 
   if _is_true "$scan_container"; then
-    if _is_true "$scan_dependencies" || _is_true "$scan_secrets" || _is_true "$scan_sast" || _is_true "$scan_tools" || _is_true "$scan_github_actions" || _is_true "$scan_package" || _is_true "$scan_ai_models" || _is_true "$scan_git_logs"; then
+    if _is_true "$scan_dependencies" || _is_true "$scan_secrets" || _is_true "$scan_sast" || _is_true "$scan_ai_sast" || _is_true "$scan_tools" || _is_true "$scan_github_actions" || _is_true "$scan_github" || _is_true "$scan_package" || _is_true "$scan_ai_models" || _is_true "$scan_git_logs"; then
       log_fatal "endorlabs plugin: scan_container cannot be combined with repository/package scan kinds; use a separate step"
     fi
     if [[ -z "${ENDOR_PLUGIN_IMAGE:-}" && -z "${ENDOR_PLUGIN_IMAGE_TAR:-}" ]]; then
@@ -93,6 +109,9 @@ function validate_scan_config() {
     if _is_true "$scan_sast"; then
       log_fatal "endorlabs plugin: scan_package and scan_sast cannot be enabled together"
     fi
+    if _is_true "$scan_ai_sast"; then
+      log_fatal "endorlabs plugin: scan_package and scan_ai_sast cannot be enabled together"
+    fi
     if _is_true "$scan_ai_models"; then
       log_fatal "endorlabs plugin: scan_package and scan_ai_models cannot be enabled together"
     fi
@@ -112,8 +131,65 @@ function validate_scan_config() {
     log_fatal "endorlabs plugin: scan_git_logs requires scan_secrets=true"
   fi
 
-  if _is_true "$disable_code_snippet_storage" && ! _is_true "$scan_sast"; then
-    log_fatal "endorlabs plugin: disable_code_snippet_storage requires scan_sast=true"
+  if _is_true "$force_rescan" && ! _is_true "$scan_secrets"; then
+    log_fatal "endorlabs plugin: force_rescan requires scan_secrets=true"
+  fi
+
+  if _is_true "$local_secrets" && ! _is_true "$scan_secrets"; then
+    log_fatal "endorlabs plugin: local requires scan_secrets=true"
+  fi
+
+  if _is_true "$pre_commit_checks" && ! _is_true "$scan_secrets"; then
+    log_fatal "endorlabs plugin: pre_commit_checks requires scan_secrets=true"
+  fi
+
+  if [[ -n "${ENDOR_PLUGIN_START_COMMIT:-}" || -n "${ENDOR_PLUGIN_END_COMMIT:-}" ]]; then
+    if ! _is_true "$scan_secrets"; then
+      log_fatal "endorlabs plugin: start_commit/end_commit require scan_secrets=true"
+    fi
+    if [[ -z "${ENDOR_PLUGIN_START_COMMIT:-}" || -z "${ENDOR_PLUGIN_END_COMMIT:-}" ]]; then
+      log_fatal "endorlabs plugin: start_commit and end_commit must be set together"
+    fi
+  fi
+
+  if [[ -n "${ENDOR_PLUGIN_SECRET_RULES_FILE:-}" ]] && ! _is_true "$scan_secrets"; then
+    log_fatal "endorlabs plugin: secret_rules_file requires scan_secrets=true"
+  fi
+
+  if _is_true "$disable_code_snippet_storage" && ! _is_true "$scan_sast" && ! _is_true "$scan_ai_sast"; then
+    log_fatal "endorlabs plugin: disable_code_snippet_storage requires scan_sast=true or scan_ai_sast=true"
+  fi
+
+  if [[ -n "${ENDOR_PLUGIN_AI_SAST_ANALYSIS:-}" || -n "${ENDOR_PLUGIN_AI_SAST_ANALYSIS_TIMEOUT:-}" ]] \
+    && ! _is_true "$scan_sast"; then
+    log_fatal "endorlabs plugin: ai_sast_analysis/ai_sast_analysis_timeout require scan_sast=true"
+  fi
+
+  if _is_true "${ENDOR_PLUGIN_AI_SAST_RESCAN:-false}" && ! _is_true "$scan_sast" && ! _is_true "$scan_ai_sast"; then
+    log_fatal "endorlabs plugin: ai_sast_rescan requires scan_sast=true or scan_ai_sast=true"
+  fi
+
+  if [[ -n "$diff_scope" ]]; then
+    if ! _is_true "$scan_sast" && ! _is_true "$scan_ai_sast" && ! _is_true "$scan_secrets"; then
+      log_fatal "endorlabs plugin: diff_scope requires scan_sast, scan_ai_sast, or scan_secrets"
+    fi
+    if _is_true "$pre_commit_checks" || _is_true "$local_secrets" || _is_true "$scan_git_logs" || _is_true "$force_rescan"; then
+      log_fatal "endorlabs plugin: diff_scope cannot be combined with pre_commit_checks, local, scan_git_logs, or force_rescan"
+    fi
+  fi
+
+  if _is_true "$dry_run" && _is_true "$scan_ai_sast" && [[ -z "$diff_scope" ]]; then
+    log_fatal "endorlabs plugin: dry_run with scan_ai_sast requires diff_scope"
+  fi
+
+  if _is_true "$scan_github"; then
+    if [[ -z "${ENDOR_PLUGIN_SCM_TOKEN_ENV:-}" ]]; then
+      log_fatal "endorlabs plugin: scan_github requires scm_token_env (env var name whose value is passed to endorctl as --scm-token)"
+    fi
+    local github_scm_ref="${ENDOR_PLUGIN_SCM_TOKEN_ENV}"
+    if [[ -z "${!github_scm_ref:-}" ]]; then
+      log_fatal "endorlabs plugin: scan_github requires env var '${ENDOR_PLUGIN_SCM_TOKEN_ENV}' (from scm_token_env) to be set and non-empty"
+    fi
   fi
 
   local bazel_include="${ENDOR_PLUGIN_BAZEL_INCLUDE_TARGETS:-}"

@@ -452,7 +452,57 @@ teardown() {
   run "$PWD"/hooks/post-command
 
   assert_failure
-  assert_output --partial "disable_code_snippet_storage requires scan_sast=true"
+  assert_output --partial "disable_code_snippet_storage requires scan_sast=true or scan_ai_sast=true"
+}
+
+@test "misc scan flags wire to endorctl" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=true
+  export BUILDKITE_PLUGIN_ENDORLABS_QUICK_SCAN=true
+  export BUILDKITE_PLUGIN_ENDORLABS_BUILD=true
+  export BUILDKITE_PLUGIN_ENDORLABS_DRY_RUN=true
+  export BUILDKITE_PLUGIN_ENDORLABS_LANGUAGES=go,java
+  export BUILDKITE_PLUGIN_ENDORLABS_EXCLUDE_PATH="vendor/**"
+  export BUILDKITE_PLUGIN_ENDORLABS_INCLUDE_PATH="src/**"
+  export BUILDKITE_PLUGIN_ENDORLABS_FINDING_TAGS=ci,bk
+  export BUILDKITE_PLUGIN_ENDORLABS_CALL_GRAPH_LANGUAGES=go
+  export BUILDKITE_PLUGIN_ENDORLABS_DISABLE_PRIVATE_PACKAGE_ANALYSIS=true
+  export BUILDKITE_PLUGIN_ENDORLABS_USE_LOCAL_REPO_CACHE=true
+  export BUILDKITE_PLUGIN_ENDORLABS_AS_DEFAULT_BRANCH=true
+  export BUILDKITE_PLUGIN_ENDORLABS_UUID=abc-123
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --dry-run=true --quick-scan=true --build=true --call-graph-languages=go --disable-private-package-analysis=true --languages=go,java --include-path=src/** --exclude-path=vendor/** --finding-tags=ci,bk --use-local-repo-cache=true --as-default-branch=true --uuid=abc-123 : echo 'ran misc scan'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "ran misc scan"
+}
+
+@test "scan_ai_sast and diff_scope wire to endorctl" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_AI_SAST=true
+  export BUILDKITE_PLUGIN_ENDORLABS_DIFF_SCOPE=baseline
+  export BUILDKITE_PLUGIN_ENDORLABS_AI_SAST_RESCAN=true
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --ai-sast=true --ai-sast-rescan=true --diff-scope=baseline : echo 'ran ai sast'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "ran ai sast"
+}
+
+@test "dry_run with scan_ai_sast requires diff_scope" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_AI_SAST=true
+  export BUILDKITE_PLUGIN_ENDORLABS_DRY_RUN=true
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "dry_run with scan_ai_sast requires diff_scope"
 }
 
 @test "annotate defaults to false" {
@@ -1079,6 +1129,25 @@ EOF
 
   assert_success
   assert_output --partial "ran aspects scan"
+}
+
+@test "bazel aspects and related flags wire to endorctl" {
+  export BUILDKITE_PLUGIN_ENDORLABS_USE_BAZEL=true
+  export BUILDKITE_PLUGIN_ENDORLABS_USE_BAZEL_ASPECTS=true
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_SHOW_INTERNAL_TARGETS=true
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_INCLUDE_TARGETS=//app:main
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_WORKSPACE_PATH=./src/java
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_VENDOR_MANIFEST_PATH=./go.mod
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_RC_PATH=.custom.bazelrc
+  export BUILDKITE_PLUGIN_ENDORLABS_BAZEL_FLAGS=config=ci
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true --use-bazel=true --bazel-include-targets=//app:main --bazel-show-internal-targets=true --use-bazel-aspects=true --bazel-workspace-path=./src/java --bazel-vendor-manifest-path=./go.mod --bazel-rc-path=.custom.bazelrc --bazel-flags=config=ci : echo 'ran bazel flags scan'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "ran bazel flags scan"
 }
 
 @test "bazel_include_targets and bazel_targets_query together fail validation" {
