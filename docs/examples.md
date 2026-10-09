@@ -7,7 +7,7 @@ See [`plugin.yml`](../plugin.yml) for the full schema.
 
 **Recommended:** vendored plugin path + Buildkite cluster secrets (see
 [setup.md](setup.md)). For the public git plugin,
-use the full GitHub URL with release tag v0.1.9 (see [troubleshooting.md](troubleshooting.md)
+use the full GitHub URL with release tag v0.1.10 (see [troubleshooting.md](troubleshooting.md)
 for shorthand vs directory mirror).
 
 ## Buildkite: cluster secrets + vendored plugin
@@ -41,7 +41,7 @@ steps:
   - label: ":hammer: Build and scan"
     command: "make build"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -62,7 +62,7 @@ time. Pinning is recommended for reproducible builds.
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -79,7 +79,7 @@ can skip the download.
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -92,7 +92,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           aws_role_arn: "arn:aws:iam::123456789012:role/endorlabs-federation-role"
 ```
@@ -103,7 +103,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           enable_azure_managed_identity: true
 ```
@@ -114,7 +114,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           gcp_service_account: "endorlabs-federation@my-project.iam.gserviceaccount.com"
 ```
@@ -128,7 +128,7 @@ the scan to a sub-directory of the checkout.
 steps:
   - command: "./gradlew assemble"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -145,7 +145,7 @@ Enable additional scan kinds beyond dependencies.
 steps:
   - command: "./gradlew test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -164,9 +164,7 @@ run `bazel build` for your targets before the plugin hook. The plugin passes
 `--use-bazel` and target flags to `endorctl` but does not install Bazel — see
 [setup.md §2–§6](setup.md#2-agent-and-cluster-build-tool-prerequisites).
 
-For Bazel target selection, aspects, and layered scan examples, see
-[repro-sandbox](https://github.com/endorlabs/repro-sandbox) (`buildkite-ensure-build-tools.sh`,
-optional `pipeline.layered-scans.yml`). Core plugin options: `use_bazel`,
+Core plugin options: `use_bazel`,
 `bazel_include_targets`, `bazel_exclude_targets`, `bazel_targets_query`,
 `use_bazel_aspects` (required for Bzlmod), `bazel_show_internal_targets`,
 `bazel_workspace_path`, `bazel_vendor_manifest_path`, `bazel_rc_path`, and
@@ -198,7 +196,7 @@ With `pr` omitted or `true` on a PR build, the plugin also maps
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -216,7 +214,7 @@ In that case the plugin does **not** set `--scm-pr-id` — use a normal PR build
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -235,7 +233,7 @@ merge target).
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -258,7 +256,7 @@ steps:
       # In real pipelines, inject via the secrets plugin or agent environment.
       ENDOR_SCM_TOKEN: "replace-with-secret"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -269,17 +267,18 @@ steps:
 ## Extra endorctl flags
 
 Use `additional_args` for any endorctl flag not yet exposed as a first-class
-plugin option (the string is split on whitespace and appended verbatim).
+plugin option (the string is split on whitespace and appended verbatim). Prefer
+named plugin keys when they exist.
 
 ```yaml
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
-          additional_args: "--phantom-dependencies=true --tools=true"
+          additional_args: "--bypass-host-check"
 ```
 
 ## Buildkite annotation summary
@@ -290,7 +289,7 @@ Enable an annotation card with sanitized scan status.
 steps:
   - command: "make build"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -307,7 +306,7 @@ path used for source scans.
 steps:
   - command: "docker build -t ghcr.io/acme/demo:${BUILDKITE_COMMIT} ."
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -321,13 +320,14 @@ steps:
 ## Container scan (standalone project with tarball)
 
 For base images or golden images, scan a tarball and persist image versions
-using `as_ref`.
+using `as_ref`. Optionally enable base-image update checks and a MAIN-context
+finding delta with `container_diff` (requires `as_ref`).
 
 ```yaml
 steps:
   - command: "docker save ghcr.io/acme/base:latest -o /tmp/base-latest.tar"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
@@ -335,8 +335,30 @@ steps:
           scan_container: true
           image_tar: "/tmp/base-latest.tar"
           project_name: "golden-base-images"
+          image_type: "base"
           as_ref: true
+          container_diff: true
+          base_image_check_updates: true
           project_tags: "team=platform,tier=base"
+```
+
+## Container scan (app image with Dockerfile context)
+
+```yaml
+steps:
+  - command: "docker build -t ghcr.io/acme/demo:${BUILDKITE_COMMIT} ."
+    plugins:
+      - endorlabs#v0.1.10:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
+          scan_dependencies: false
+          scan_container: true
+          image: "ghcr.io/acme/demo:${BUILDKITE_COMMIT}"
+          image_type: "app"
+          dockerfile_path: "Dockerfile"
+          app_scan_project: "demo-app"
+          as_ref: true
 ```
 
 ## Artifact signing mode
@@ -352,7 +374,7 @@ signing.
 steps:
   - command: "make release"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           mode: "sign"
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
@@ -371,7 +393,7 @@ steps:
 steps:
   - command: "make verify-release"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           mode: "verify"
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
@@ -386,7 +408,7 @@ steps:
 steps:
   - command: "make test"
     plugins:
-      - endorlabs#v0.1.9:
+      - endorlabs#v0.1.10:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"

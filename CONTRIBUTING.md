@@ -54,8 +54,9 @@ See [docs/maintainers/local-tmp.md](docs/maintainers/local-tmp.md) for layout an
 
 ## Hosted end-to-end validation
 
-Real `endorctl` scans against Endor Labs run in [repro-sandbox](https://github.com/endorlabs/repro-sandbox)
-with a vendored copy of this plugin and Buildkite cluster secrets — not in this repo's PR CI.
+This repository's PR CI does **not** run live `endorctl` scans. Maintainers validate
+against a real Endor tenant and Buildkite cluster separately (vendored plugin copy +
+cluster secrets) before or after a release.
 
 ## Versioning
 
@@ -67,11 +68,12 @@ Pre-**1.0** releases stay on **`v0.1.x`**: bump only the **patch** (`v0.1.5`, `v
 2. Update [CHANGELOG.md](CHANGELOG.md)
 3. Align version pins in [README.md](README.md), [docs/setup.md](docs/setup.md), [docs/troubleshooting.md](docs/troubleshooting.md), and [docs/examples.md](docs/examples.md) with the new tag (plugin-linter enforces this)
 4. `git tag v0.1.x` and push the tag; `gh release create v0.1.x --notes-file ...` (mark latest)
-5. Sync vendored copy into [repro-sandbox](https://github.com/endorlabs/repro-sandbox); confirm default pipeline build is green
+5. Optionally re-run a hosted Buildkite smoke against the new tag with a real tenant
 
 ## Local agent guidance (maintainers)
 
-Gitignored: `AGENTS.md` (portable technical reference) and `.cursor/rules/` (machine paths, workflow, security). Not required to build the plugin.
+Gitignored (never commit): `AGENTS.md` and `.cursor/` (including `.cursor/rules/`).
+Optional local-only IDE/agent notes — not required to build or release the plugin.
 
 ## Pull requests
 

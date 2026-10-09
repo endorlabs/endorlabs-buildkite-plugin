@@ -2,7 +2,7 @@
 
 Configure [endorctl](https://docs.endorlabs.com/developers-api/cli/commands/scan) on Buildkite with API keys (same model as the [GitHub Action](https://github.com/endorlabs/github-action)). Do not mix `ENDOR_TOKEN` bearer auth with API keys on the same job.
 
-**Official docs:** [Endor scan](https://docs.endorlabs.com/scan) · [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) · [Writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing)
+**Official docs:** [Endor scan](https://docs.endorlabs.com/scan) · [Buildkite cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets) · [Writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing)
 
 **Plugin docs:** [index](README.md) · [examples](examples.md) · [troubleshooting](troubleshooting.md)
 
@@ -41,9 +41,9 @@ Do not duplicate `ENDOR_NAMESPACE` under top-level `env:` when it is already und
 
 4. Confirm the build log shows `:endorlabs: Running endorctl scan`. Policy blocking uses exit `128` by default (`fail_on_policy: true`). See [troubleshooting.md](troubleshooting.md) for exits and clone issues.
 
-**Public plugin ref:** use `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.9` until `endorlabs#v0.1.9` appears in the [plugins directory](https://buildkite.com/docs/integrations/buildkite-plugins). Vendoring still works for air-gapped or cross-org constraints.
+**Public plugin ref:** use `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.10` until `endorlabs#v0.1.10` appears in the [plugins directory](https://buildkite.com/docs/pipelines/integrations/plugins/directory). Vendoring still works for air-gapped or cross-org constraints.
 
-More YAML: [examples.md](examples.md). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+More YAML: [examples.md](examples.md).
 
 ## 1. Credentials on the agent
 
@@ -67,7 +67,7 @@ This plugin installs **endorctl** only (`bash` + `curl` in [`plugin.yml`](../plu
 | **Pipeline `command`** | `make build`, `bazel build` — before `post-command` |
 | **Cluster secrets** | Endor credentials only |
 
-Exports from subshell scripts are not visible to the hook unless persisted to [`BUILDKITE_ENV_FILE`](https://buildkite.com/docs/pipelines/environment-variables#BUILDKITE_ENV_FILE) or baked into the image.
+Exports from subshell scripts are not visible to the hook unless persisted to [`BUILDKITE_ENV_FILE`](https://buildkite.com/docs/pipelines/configure/environment-variables#BUILDKITE_ENV_FILE) or baked into the image.
 
 ```yaml
 steps:
@@ -82,7 +82,7 @@ steps:
           bazel_include_targets: "//app/..."
 ```
 
-Example helper: [repro-sandbox `buildkite-ensure-build-tools.sh`](https://github.com/endorlabs/repro-sandbox/blob/main/scripts/buildkite-ensure-build-tools.sh).
+Bake tools into the agent image, or bootstrap them in `command` and persist `PATH` via `BUILDKITE_ENV_FILE` as shown above.
 
 ## 3. Plugin source — vendored (recommended)
 

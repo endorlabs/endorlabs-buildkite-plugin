@@ -94,6 +94,44 @@ function validate_scan_config() {
     if [[ -n "${ENDOR_PLUGIN_IMAGE:-}" && -n "${ENDOR_PLUGIN_IMAGE_TAR:-}" ]]; then
       log_fatal "endorlabs plugin: image and image_tar are mutually exclusive; provide only one"
     fi
+
+    local image_type="${ENDOR_PLUGIN_IMAGE_TYPE:-}"
+    if [[ -n "$image_type" && "$image_type" != "app" && "$image_type" != "base" ]]; then
+      log_fatal "endorlabs plugin: image_type must be 'app' or 'base'"
+    fi
+    if [[ -n "${ENDOR_PLUGIN_BASE_IMAGE_NAME:-}" && -n "${ENDOR_PLUGIN_DOCKERFILE_PATH:-}" ]]; then
+      log_fatal "endorlabs plugin: base_image_name and dockerfile_path are mutually exclusive; provide only one"
+    fi
+    if [[ -n "${ENDOR_PLUGIN_BASE_IMAGE_TAG_NEXT:-}" || -n "${ENDOR_PLUGIN_BASE_IMAGE_TAG_LATEST:-}" ]]; then
+      if ! _is_true "${ENDOR_PLUGIN_BASE_IMAGE_CHECK_UPDATES:-false}"; then
+        log_fatal "endorlabs plugin: base_image_tag_next and base_image_tag_latest require base_image_check_updates=true"
+      fi
+    fi
+    local tag_val
+    for tag_val in "${ENDOR_PLUGIN_BASE_IMAGE_TAG_NEXT:-}" "${ENDOR_PLUGIN_BASE_IMAGE_TAG_LATEST:-}"; do
+      if [[ -n "$tag_val" ]] && [[ "$tag_val" =~ [:/@\ ] ]]; then
+        log_fatal "endorlabs plugin: base_image_tag_next and base_image_tag_latest must be a tag only (no registry, repository, or digest)"
+      fi
+    done
+    if _is_true "${ENDOR_PLUGIN_CONTAINER_DIFF:-false}" && ! _is_true "${ENDOR_PLUGIN_AS_REF:-false}"; then
+      log_fatal "endorlabs plugin: container_diff requires as_ref=true"
+    fi
+    if _is_true "${ENDOR_PLUGIN_CONTAINER_DIFF:-false}" && _is_true "$dry_run"; then
+      log_fatal "endorlabs plugin: container_diff cannot be combined with dry_run"
+    fi
+    if _is_true "${ENDOR_PLUGIN_SUPPRESS_BASELINE_FINDINGS:-false}" && ! _is_true "${ENDOR_PLUGIN_CONTAINER_DIFF:-false}"; then
+      log_fatal "endorlabs plugin: suppress_baseline_findings requires container_diff=true"
+    fi
+    if [[ -n "${ENDOR_PLUGIN_PROFILING_MAX_SIZE:-}" ]]; then
+      if ! [[ "${ENDOR_PLUGIN_PROFILING_MAX_SIZE}" =~ ^[1-9][0-9]*$ ]]; then
+        log_fatal "endorlabs plugin: profiling_max_size must be an integer of at least 1"
+      fi
+    fi
+    if ! _is_true "${ENDOR_PLUGIN_OS_REACHABILITY:-false}"; then
+      if [[ -n "${ENDOR_PLUGIN_PROFILING_VOLUME:-}" || -n "${ENDOR_PLUGIN_PROFILING_PUBLISH:-}" || -n "${ENDOR_PLUGIN_PROFILING_ENV:-}" || -n "${ENDOR_PLUGIN_PROFILING_ENTRYPOINT:-}" ]]; then
+        log_fatal "endorlabs plugin: profiling_volume, profiling_publish, profiling_env, and profiling_entrypoint require os_reachability=true"
+      fi
+    fi
   fi
 
   if _is_true "$scan_package"; then

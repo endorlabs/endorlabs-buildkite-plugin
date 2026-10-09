@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-10-09
+
+### Added
+
+- Container scans: first-class options for linking an app SCA project, Dockerfile /
+  base-image context, base-image update checks, finding delta vs MAIN (`container_diff`
+  + optional baseline suppression), and OS-reachability profiling helpers. Dry-run /
+  finding tags work on container scans; branch name is passed like repository scans.
+- `output_type: table-verbose` for detailed table output.
+
+### Fixed
+
+- Broken Buildkite doc links (plugins directory, cluster secrets, `BUILDKITE_ENV_FILE`).
+- Public docs no longer link a private demo sandbox; SECURITY contact points at endorlabs.com.
+
 ## [0.1.9] - 2026-09-15
 
 ### Added
@@ -161,4 +176,4 @@ Initial public release.
 
 - Customer setup: [docs/setup.md](docs/setup.md)
 - Pipeline examples: [docs/examples.md](docs/examples.md)
-- Reference build: [repro-sandbox](https://github.com/endorlabs/repro-sandbox)
+- Hosted E2E validation note in CONTRIBUTING (separate from this repo's PR CI)

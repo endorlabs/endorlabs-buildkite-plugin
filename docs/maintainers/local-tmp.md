@@ -32,7 +32,7 @@ All **non-shipping** maintainer tooling and artifacts live under **`.tmp/`** at 
 ## Commands (from repo root)
 
 ```powershell
-# Download repro-sandbox scan artifacts (default build 51)
+# Download hosted Buildkite scan artifacts (default build 51)
 powershell -NoProfile -File .tmp/scripts/download-repro-scan-artifacts.ps1 -BuildNumber 51
 ```
 

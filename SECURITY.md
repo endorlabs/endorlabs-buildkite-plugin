@@ -3,7 +3,7 @@
 ## Reporting vulnerabilities
 
 If you believe you have found a security issue in this plugin, report it through
-your Endor Labs support channel or contact [Endor Labs](https://endorlabs.com)
+your Endor Labs support channel or contact [Endor Labs](https://www.endorlabs.com/)
 rather than opening a public issue with exploit details.
 
 ## Using credentials safely

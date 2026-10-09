@@ -32,14 +32,14 @@ configuration:
         exports `ENDOR_API_CREDENTIALS_KEY` from its value and never passes
         `--api-key` on the CLI. Use with `api_secret_env`. See the
         [plugin security guide](https://github.com/endorlabs/endorlabs-buildkite-plugin/blob/main/SECURITY.md)
-        and [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) for more information.
+        and [Buildkite cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets) for more information.
     api_secret_env:
       type: string
       description: >-
         Name of a Buildkite secret env var holding the API secret. Exported as
         `ENDOR_API_CREDENTIALS_SECRET`. Required when `api_key_env` is set unless
         both credentials are pre-exported on the agent. See
-        [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) for more information.
+        [Buildkite cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets) for more information.
     aws_role_arn:
       type: string
       description: >-
@@ -223,8 +223,9 @@ configuration:
       default: false
       description: >-
         Run without storing scan results (`--dry-run=true`). Read-only API
-        access. Use with SCA, SAST, AI SAST, or secrets. With `scan_ai_sast`,
-        also set `diff_scope`. See the
+        access. Use with SCA, SAST, AI SAST, secrets, or container scans. With
+        `scan_ai_sast`, also set `diff_scope`. Cannot combine with
+        `container_diff`. See the
         [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
     quick_scan:
       type: boolean
@@ -469,6 +470,124 @@ configuration:
         Directory of runtime profiling data to include in container reachability
         analysis (`--profiling-data-dir`). See
         [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
+    app_scan_project:
+      type: string
+      description: >-
+        SCA project name for the app inside the container image
+        (`--app-scan-project`). Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    app_scan_context:
+      type: string
+      default: "default"
+      description: >-
+        Context ID of the SCA app scan (`--app-scan-context`). Defaults to
+        `default`. Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    image_type:
+      type: string
+      enum: [ "app", "base" ]
+      description: >-
+        Skip image-type auto-detection (`--image-type`): `app` or `base`.
+        Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    base_image_name:
+      type: string
+      description: >-
+        Base image name of the image being scanned (`--base-image-name`).
+        Mutually exclusive with `dockerfile_path`. Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    dockerfile_path:
+      type: string
+      description: >-
+        Dockerfile path used to build the image (`--dockerfile-path`). Mutually
+        exclusive with `base_image_name`. Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    base_image_scan:
+      type: boolean
+      default: true
+      description: >-
+        Scan the identified base image when not previously scanned
+        (`--base-image-scan`). Defaults to true. Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    base_image_scan_project:
+      type: string
+      description: >-
+        Project name for the base image scan (`--base-image-scan-project`).
+        When unset, derived from the base image repository. Container scans
+        only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    base_image_check_updates:
+      type: boolean
+      default: false
+      description: >-
+        Check for base image update candidates
+        (`--base-image-check-updates`). Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    base_image_tag_next:
+      type: string
+      description: >-
+        Candidate "next" base image tag only (`--base-image-tag-next`); the
+        repository is inherited from the detected base image. Requires
+        `base_image_check_updates`. Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    base_image_tag_latest:
+      type: string
+      description: >-
+        Candidate "latest" base image tag only (`--base-image-tag-latest`);
+        the repository is inherited from the detected base image. Requires
+        `base_image_check_updates`. Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    container_diff:
+      type: boolean
+      default: false
+      description: >-
+        Show a compact finding delta against the project's MAIN-context
+        baseline after the scan (`--diff`). Requires `as_ref`. Cannot combine
+        with `dry_run`. Container scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    suppress_baseline_findings:
+      type: boolean
+      default: false
+      description: >-
+        Suppress findings common to this scan and its baseline
+        (`--suppress-baseline-findings`). Requires `container_diff`. Container
+        scans only. See
+        [scanning containers with endorctl](https://docs.endorlabs.com/scan/containers/scan-containers-using-endorctl) for more information.
+    profiling_max_size:
+      type: integer
+      default: 10
+      description: >-
+        Maximum container image size in GB for dynamic profiling
+        (`--profiling-max-size`). Must be at least 1. Defaults to 10. Container
+        scans only. See
+        [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
+    profiling_volume:
+      type: string
+      description: >-
+        Bind mount for container profiling (`--volume`), for example
+        `/host/path:/container/path`. Comma-separated for multiple mounts.
+        Requires `os_reachability`. Container scans only. See
+        [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
+    profiling_publish:
+      type: string
+      description: >-
+        Publish container ports for profiling (`--publish`), for example
+        `8080:80`. Comma-separated for multiple mappings. Requires
+        `os_reachability`. Container scans only. See
+        [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
+    profiling_env:
+      type: string
+      description: >-
+        Environment variables for profiling (`--env`), for example
+        `KEY=value`. Comma-separated for multiple pairs. Requires
+        `os_reachability`. Container scans only. See
+        [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
+    profiling_entrypoint:
+      type: string
+      description: >-
+        Override image ENTRYPOINT for profiling (`--entrypoint`). Requires
+        `os_reachability`. Container scans only. See
+        [container reachability](https://docs.endorlabs.com/scan/containers/container-reachability) for more information.
     artifact_name:
       type: string
       description: >-
@@ -558,7 +677,7 @@ configuration:
         Enable verbose endorctl logging (`--verbose=true`).
     output_type:
       type: string
-      enum: [ "json", "yaml", "summary", "table" ]
+      enum: [ "json", "yaml", "summary", "table", "table-verbose" ]
       default: json
       description: >-
         Scan result format (`--output-type`). Use json for annotations and

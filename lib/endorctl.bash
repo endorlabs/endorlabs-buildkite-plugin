@@ -89,6 +89,25 @@ function configure_endorctl() {
   ENDOR_PLUGIN_PROJECT_TAGS="$(plugin_read_config PROJECT_TAGS)"
   ENDOR_PLUGIN_CONTAINER_SCAN_PATH="$(plugin_read_config CONTAINER_SCAN_PATH ".")"
   ENDOR_PLUGIN_PROFILING_DATA_DIR="$(plugin_read_config PROFILING_DATA_DIR)"
+  ENDOR_PLUGIN_APP_SCAN_PROJECT="$(plugin_read_config APP_SCAN_PROJECT)"
+  # Omit when unset so endorctl keeps its default ("default"); pass only when configured.
+  ENDOR_PLUGIN_APP_SCAN_CONTEXT="$(plugin_read_config APP_SCAN_CONTEXT)"
+  ENDOR_PLUGIN_IMAGE_TYPE="$(plugin_read_config IMAGE_TYPE)"
+  ENDOR_PLUGIN_BASE_IMAGE_NAME="$(plugin_read_config BASE_IMAGE_NAME)"
+  ENDOR_PLUGIN_DOCKERFILE_PATH="$(plugin_read_config DOCKERFILE_PATH)"
+  ENDOR_PLUGIN_BASE_IMAGE_SCAN="$(plugin_read_config BASE_IMAGE_SCAN "true")"
+  ENDOR_PLUGIN_BASE_IMAGE_SCAN_PROJECT="$(plugin_read_config BASE_IMAGE_SCAN_PROJECT)"
+  ENDOR_PLUGIN_BASE_IMAGE_CHECK_UPDATES="$(plugin_read_config BASE_IMAGE_CHECK_UPDATES "false")"
+  ENDOR_PLUGIN_BASE_IMAGE_TAG_NEXT="$(plugin_read_config BASE_IMAGE_TAG_NEXT)"
+  ENDOR_PLUGIN_BASE_IMAGE_TAG_LATEST="$(plugin_read_config BASE_IMAGE_TAG_LATEST)"
+  ENDOR_PLUGIN_CONTAINER_DIFF="$(plugin_read_config CONTAINER_DIFF "false")"
+  ENDOR_PLUGIN_SUPPRESS_BASELINE_FINDINGS="$(plugin_read_config SUPPRESS_BASELINE_FINDINGS "false")"
+  # Omit when unset so endorctl keeps its default (10).
+  ENDOR_PLUGIN_PROFILING_MAX_SIZE="$(plugin_read_config PROFILING_MAX_SIZE)"
+  ENDOR_PLUGIN_PROFILING_VOLUME="$(plugin_read_config PROFILING_VOLUME)"
+  ENDOR_PLUGIN_PROFILING_PUBLISH="$(plugin_read_config PROFILING_PUBLISH)"
+  ENDOR_PLUGIN_PROFILING_ENV="$(plugin_read_config PROFILING_ENV)"
+  ENDOR_PLUGIN_PROFILING_ENTRYPOINT="$(plugin_read_config PROFILING_ENTRYPOINT)"
   ENDOR_PLUGIN_ARTIFACT_NAME="$(plugin_read_config ARTIFACT_NAME)"
   ENDOR_PLUGIN_CERTIFICATE_OIDC_ISSUER="$(plugin_read_config CERTIFICATE_OIDC_ISSUER)"
   ENDOR_PLUGIN_CERTIFICATE_IDENTITY="$(plugin_read_config CERTIFICATE_IDENTITY)"
@@ -692,8 +711,72 @@ function run_container_scan() {
   if [[ -n "$ENDOR_PLUGIN_CONTAINER_SCAN_PATH" ]]; then
     args+=("--path=${ENDOR_PLUGIN_CONTAINER_SCAN_PATH}")
   fi
+  # Mirror repo-scan: map BUILDKITE_BRANCH when a container path is set (CLI
+  # requires --path with --detached-ref-name; path defaults to ".").
+  local _ctr_branch="${BUILDKITE_BRANCH:-}"
+  if [[ -n "$_ctr_branch" && -n "$ENDOR_PLUGIN_CONTAINER_SCAN_PATH" ]]; then
+    args+=("--detached-ref-name=${_ctr_branch}")
+  fi
   if [[ -n "$ENDOR_PLUGIN_PROFILING_DATA_DIR" ]]; then
     args+=("--profiling-data-dir=${ENDOR_PLUGIN_PROFILING_DATA_DIR}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_APP_SCAN_PROJECT" ]]; then
+    args+=("--app-scan-project=${ENDOR_PLUGIN_APP_SCAN_PROJECT}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_APP_SCAN_CONTEXT" ]]; then
+    args+=("--app-scan-context=${ENDOR_PLUGIN_APP_SCAN_CONTEXT}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_IMAGE_TYPE" ]]; then
+    args+=("--image-type=${ENDOR_PLUGIN_IMAGE_TYPE}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_BASE_IMAGE_NAME" ]]; then
+    args+=("--base-image-name=${ENDOR_PLUGIN_BASE_IMAGE_NAME}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_DOCKERFILE_PATH" ]]; then
+    args+=("--dockerfile-path=${ENDOR_PLUGIN_DOCKERFILE_PATH}")
+  fi
+  # CLI defaults --base-image-scan to true; only pass when disabling.
+  if [[ "$ENDOR_PLUGIN_BASE_IMAGE_SCAN" == "false" ]]; then
+    args+=("--base-image-scan=false")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_BASE_IMAGE_SCAN_PROJECT" ]]; then
+    args+=("--base-image-scan-project=${ENDOR_PLUGIN_BASE_IMAGE_SCAN_PROJECT}")
+  fi
+  if [[ "$ENDOR_PLUGIN_BASE_IMAGE_CHECK_UPDATES" == "true" ]]; then
+    args+=("--base-image-check-updates=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_BASE_IMAGE_TAG_NEXT" ]]; then
+    args+=("--base-image-tag-next=${ENDOR_PLUGIN_BASE_IMAGE_TAG_NEXT}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_BASE_IMAGE_TAG_LATEST" ]]; then
+    args+=("--base-image-tag-latest=${ENDOR_PLUGIN_BASE_IMAGE_TAG_LATEST}")
+  fi
+  if [[ "$ENDOR_PLUGIN_CONTAINER_DIFF" == "true" ]]; then
+    args+=("--diff=true")
+  fi
+  if [[ "$ENDOR_PLUGIN_SUPPRESS_BASELINE_FINDINGS" == "true" ]]; then
+    args+=("--suppress-baseline-findings=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_PROFILING_MAX_SIZE" ]]; then
+    args+=("--profiling-max-size=${ENDOR_PLUGIN_PROFILING_MAX_SIZE}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_PROFILING_VOLUME" ]]; then
+    args+=("--volume=${ENDOR_PLUGIN_PROFILING_VOLUME}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_PROFILING_PUBLISH" ]]; then
+    args+=("--publish=${ENDOR_PLUGIN_PROFILING_PUBLISH}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_PROFILING_ENV" ]]; then
+    args+=("--env=${ENDOR_PLUGIN_PROFILING_ENV}")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_PROFILING_ENTRYPOINT" ]]; then
+    args+=("--entrypoint=${ENDOR_PLUGIN_PROFILING_ENTRYPOINT}")
+  fi
+  if [[ "$ENDOR_PLUGIN_DRY_RUN" == "true" ]]; then
+    args+=("--dry-run=true")
+  fi
+  if [[ -n "$ENDOR_PLUGIN_FINDING_TAGS" ]]; then
+    args+=("--finding-tags=${ENDOR_PLUGIN_FINDING_TAGS}")
   fi
 
   _append_additional_args args
