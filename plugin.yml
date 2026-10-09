@@ -32,14 +32,14 @@ configuration:
         exports `ENDOR_API_CREDENTIALS_KEY` from its value and never passes
         `--api-key` on the CLI. Use with `api_secret_env`. See the
         [plugin security guide](https://github.com/endorlabs/endorlabs-buildkite-plugin/blob/main/SECURITY.md)
-        and [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) for more information.
+        and [Buildkite cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets) for more information.
     api_secret_env:
       type: string
       description: >-
         Name of a Buildkite secret env var holding the API secret. Exported as
         `ENDOR_API_CREDENTIALS_SECRET`. Required when `api_key_env` is set unless
         both credentials are pre-exported on the agent. See
-        [Buildkite cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets) for more information.
+        [Buildkite cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets) for more information.
     aws_role_arn:
       type: string
       description: >-

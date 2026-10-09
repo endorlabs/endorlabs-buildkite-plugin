@@ -7,7 +7,7 @@ Buildkite plugin to run [endorctl](https://docs.endorlabs.com/developers-api/cli
 ## Documentation
 
 - **Endor Labs** — [scan](https://docs.endorlabs.com/scan), [exit codes](https://docs.endorlabs.com/best-practices/troubleshooting/endorctl-exitcodes)
-- **Buildkite** — [writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing), [cluster secrets](https://buildkite.com/docs/agent/v3/clusters/secrets)
+- **Buildkite** — [writing plugins](https://buildkite.com/docs/pipelines/integrations/plugins/writing), [cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets)
 - **This plugin** — [docs index](docs/README.md): [setup](docs/setup.md) · [examples](docs/examples.md) · [troubleshooting](docs/troubleshooting.md)
 
 ## Quick example (vendored plugin)
@@ -30,7 +30,7 @@ steps:
           annotate: true
 ```
 
-Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.9` (or `endorlabs#v0.1.9` after [directory sync](https://buildkite.com/docs/integrations/buildkite-plugins)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.9` (or `endorlabs#v0.1.9` after [directory sync](https://buildkite.com/docs/pipelines/integrations/plugins/directory)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
 
 ## How it works
 
