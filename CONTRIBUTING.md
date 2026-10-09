@@ -70,10 +70,6 @@ Pre-**1.0** releases stay on **`v0.1.x`**: bump only the **patch** (`v0.1.5`, `v
 4. `git tag v0.1.x` and push the tag; `gh release create v0.1.x --notes-file ...` (mark latest)
 5. Optionally re-run a hosted Buildkite smoke against the new tag with a real tenant
 
-## Local agent guidance (maintainers)
-
-Gitignored: `AGENTS.md` (portable technical reference) and `.cursor/rules/` (machine paths, workflow, security). Not required to build the plugin.
-
 ## Pull requests
 
 - Keep changes focused; extend BATS when behaviour changes.
