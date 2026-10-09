@@ -173,4 +173,4 @@ Initial public release.
 
 - Customer setup: [docs/setup.md](docs/setup.md)
 - Pipeline examples: [docs/examples.md](docs/examples.md)
-- Reference build: private maintainer sandbox (not linked from the public plugin tree)
+- Hosted E2E validation note in CONTRIBUTING (separate from this repo's PR CI)
