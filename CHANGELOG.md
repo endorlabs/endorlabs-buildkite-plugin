@@ -4,17 +4,20 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-10-09
+
 ### Added
 
-- Container scan parity with tip endorctl: `app_scan_project`, `app_scan_context`,
-  `image_type`, `base_image_name`, `dockerfile_path`, `base_image_scan`,
-  `base_image_scan_project`, `base_image_check_updates`, `base_image_tag_next`,
-  `base_image_tag_latest`, `container_diff`, `suppress_baseline_findings`,
-  `profiling_max_size`, `profiling_volume`, `profiling_publish`, `profiling_env`,
-  and `profiling_entrypoint`.
-- `dry_run` and `finding_tags` on the container scan path; `BUILDKITE_BRANCH`
-  mapped to `--detached-ref-name` for container scans (same as repository scans).
-- `output_type` enum value `table-verbose`.
+- Container scans: first-class options for linking an app SCA project, Dockerfile /
+  base-image context, base-image update checks, finding delta vs MAIN (`container_diff`
+  + optional baseline suppression), and OS-reachability profiling helpers. Dry-run /
+  finding tags work on container scans; branch name is passed like repository scans.
+- `output_type: table-verbose` for detailed table output.
+
+### Fixed
+
+- Broken Buildkite doc links (plugins directory, cluster secrets, `BUILDKITE_ENV_FILE`).
+- Public docs no longer link a private demo sandbox; SECURITY contact points at endorlabs.com.
 
 ## [0.1.9] - 2026-09-15
 
