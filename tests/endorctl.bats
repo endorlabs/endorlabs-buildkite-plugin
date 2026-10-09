@@ -985,6 +985,48 @@ EOF
   assert_output --partial "ran container scan"
 }
 
+@test "container scan maps tip endorctl base-image and app-scan flags" {
+  export BUILDKITE_BRANCH=main
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE=ghcr.io/acme/demo:1.2.3
+  export BUILDKITE_PLUGIN_ENDORLABS_AS_REF=true
+  export BUILDKITE_PLUGIN_ENDORLABS_CONTAINER_DIFF=true
+  export BUILDKITE_PLUGIN_ENDORLABS_SUPPRESS_BASELINE_FINDINGS=true
+  export BUILDKITE_PLUGIN_ENDORLABS_APP_SCAN_PROJECT=demo-app
+  export BUILDKITE_PLUGIN_ENDORLABS_APP_SCAN_CONTEXT=default
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE_TYPE=app
+  export BUILDKITE_PLUGIN_ENDORLABS_DOCKERFILE_PATH=Dockerfile
+  export BUILDKITE_PLUGIN_ENDORLABS_BASE_IMAGE_CHECK_UPDATES=true
+  export BUILDKITE_PLUGIN_ENDORLABS_BASE_IMAGE_TAG_NEXT=3.20
+  export BUILDKITE_PLUGIN_ENDORLABS_BASE_IMAGE_TAG_LATEST=latest
+  export BUILDKITE_PLUGIN_ENDORLABS_FINDING_TAGS=tier=prod
+  export BUILDKITE_PLUGIN_ENDORLABS_OUTPUT_TYPE=table-verbose
+
+  stub endorctl \
+    "container scan --namespace=demo --output-type=table-verbose --log-level=info --verbose=false --image=ghcr.io/acme/demo:1.2.3 --as-ref --path=. --detached-ref-name=main --app-scan-project=demo-app --app-scan-context=default --image-type=app --dockerfile-path=Dockerfile --base-image-check-updates=true --base-image-tag-next=3.20 --base-image-tag-latest=latest --diff=true --suppress-baseline-findings=true --finding-tags=tier=prod : echo 'ran tip container scan'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "ran tip container scan"
+}
+
+@test "container scan passes base-image-scan=false when disabled" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE=alpine:3.19
+  export BUILDKITE_PLUGIN_ENDORLABS_BASE_IMAGE_SCAN=false
+
+  stub endorctl \
+    "container scan --namespace=demo --output-type=json --log-level=info --verbose=false --image=alpine:3.19 --path=. --base-image-scan=false : echo 'base scan off'"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "base scan off"
+}
+
 @test "container scan fails when both image and image_tar are configured" {
   export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
   export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
@@ -1005,6 +1047,69 @@ EOF
 
   assert_failure
   assert_output --partial "scan_container cannot be combined with repository/package scan kinds"
+}
+
+@test "container_diff requires as_ref" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE=alpine:3.19
+  export BUILDKITE_PLUGIN_ENDORLABS_CONTAINER_DIFF=true
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "container_diff requires as_ref=true"
+}
+
+@test "container_diff cannot combine with dry_run" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE=alpine:3.19
+  export BUILDKITE_PLUGIN_ENDORLABS_AS_REF=true
+  export BUILDKITE_PLUGIN_ENDORLABS_CONTAINER_DIFF=true
+  export BUILDKITE_PLUGIN_ENDORLABS_DRY_RUN=true
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "container_diff cannot be combined with dry_run"
+}
+
+@test "base_image_name and dockerfile_path are mutually exclusive" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE=alpine:3.19
+  export BUILDKITE_PLUGIN_ENDORLABS_BASE_IMAGE_NAME=alpine:3.19
+  export BUILDKITE_PLUGIN_ENDORLABS_DOCKERFILE_PATH=Dockerfile
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "base_image_name and dockerfile_path are mutually exclusive"
+}
+
+@test "base_image_tag_next requires base_image_check_updates" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE=alpine:3.19
+  export BUILDKITE_PLUGIN_ENDORLABS_BASE_IMAGE_TAG_NEXT=3.20
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "base_image_tag_next and base_image_tag_latest require base_image_check_updates=true"
+}
+
+@test "profiling_volume requires os_reachability" {
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
+  export BUILDKITE_PLUGIN_ENDORLABS_SCAN_CONTAINER=true
+  export BUILDKITE_PLUGIN_ENDORLABS_IMAGE=alpine:3.19
+  export BUILDKITE_PLUGIN_ENDORLABS_PROFILING_VOLUME=/tmp/data:/data
+
+  run "$PWD"/hooks/post-command
+
+  assert_failure
+  assert_output --partial "profiling_volume, profiling_publish, profiling_env, and profiling_entrypoint require os_reachability=true"
 }
 
 @test "sign mode runs endorctl artifact sign" {

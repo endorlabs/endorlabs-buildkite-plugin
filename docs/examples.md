@@ -278,7 +278,7 @@ steps:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
-          additional_args: "--droid-gpt=true"
+          additional_args: "--bypass-host-check"
 ```
 
 ## Buildkite annotation summary
