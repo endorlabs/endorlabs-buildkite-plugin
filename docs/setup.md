@@ -43,7 +43,7 @@ Do not duplicate `ENDOR_NAMESPACE` under top-level `env:` when it is already und
 
 **Public plugin ref:** use `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.9` until `endorlabs#v0.1.9` appears in the [plugins directory](https://buildkite.com/docs/pipelines/integrations/plugins/directory). Vendoring still works for air-gapped or cross-org constraints.
 
-More YAML: [examples.md](examples.md). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+More YAML: [examples.md](examples.md).
 
 ## 1. Credentials on the agent
 
@@ -82,7 +82,7 @@ steps:
           bazel_include_targets: "//app/..."
 ```
 
-Example helper: [repro-sandbox `buildkite-ensure-build-tools.sh`](https://github.com/endorlabs/repro-sandbox/blob/main/scripts/buildkite-ensure-build-tools.sh).
+Bake tools into the agent image, or bootstrap them in `command` and persist `PATH` via `BUILDKITE_ENV_FILE` as shown above.
 
 ## 3. Plugin source — vendored (recommended)
 

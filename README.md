@@ -30,7 +30,7 @@ steps:
           annotate: true
 ```
 
-Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.9` (or `endorlabs#v0.1.9` after [directory sync](https://buildkite.com/docs/pipelines/integrations/plugins/directory)). Demo: [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+Vendor with [`scripts/sync-vendor-endorlabs-plugin.sh`](scripts/sync-vendor-endorlabs-plugin.sh). Public git ref: `https://github.com/endorlabs/endorlabs-buildkite-plugin.git#v0.1.9` (or `endorlabs#v0.1.9` after [directory sync](https://buildkite.com/docs/pipelines/integrations/plugins/directory)).
 
 ## How it works
 
@@ -46,7 +46,7 @@ With `annotate: true` (and `jq` on the agent for JSON output), the plugin posts 
 
 ![Endor Labs dependency scan annotation in Buildkite — severity counts, policy status, and critical/high findings table](docs/images/buildkite-plugin-demo.png)
 
-Example from [repro-sandbox](https://github.com/endorlabs/repro-sandbox) (`dev` branch): parallel secrets, dependencies, SAST, and AI-SAST steps each with job-scoped annotations.
+Typical multi-step layout: parallel secrets, dependencies, SAST, and AI-SAST steps each with job-scoped annotations (unique `annotate_context` per step).
 
 ## Common options
 
@@ -88,7 +88,7 @@ PR comments need `enable_pr_comments` + `scm_token_env` + a numeric `BUILDKITE_P
 docker compose run --rm tests
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). E2E validation: vendored plugin in [repro-sandbox](https://github.com/endorlabs/repro-sandbox).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Hosted E2E validation runs in a private maintainer sandbox (not this repository's PR CI).
 
 ## License
 

@@ -164,9 +164,7 @@ run `bazel build` for your targets before the plugin hook. The plugin passes
 `--use-bazel` and target flags to `endorctl` but does not install Bazel — see
 [setup.md §2–§6](setup.md#2-agent-and-cluster-build-tool-prerequisites).
 
-For Bazel target selection, aspects, and layered scan examples, see
-[repro-sandbox](https://github.com/endorlabs/repro-sandbox) (`buildkite-ensure-build-tools.sh`,
-optional `pipeline.layered-scans.yml`). Core plugin options: `use_bazel`,
+Core plugin options: `use_bazel`,
 `bazel_include_targets`, `bazel_exclude_targets`, `bazel_targets_query`,
 `use_bazel_aspects` (required for Bzlmod), `bazel_show_internal_targets`,
 `bazel_workspace_path`, `bazel_vendor_manifest_path`, `bazel_rc_path`, and
@@ -269,7 +267,8 @@ steps:
 ## Extra endorctl flags
 
 Use `additional_args` for any endorctl flag not yet exposed as a first-class
-plugin option (the string is split on whitespace and appended verbatim).
+plugin option (the string is split on whitespace and appended verbatim). Prefer
+named plugin keys when they exist.
 
 ```yaml
 steps:
@@ -279,7 +278,7 @@ steps:
           namespace: "your-namespace"
           api_key_env: "ENDOR_API_CREDENTIALS_KEY"
           api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
-          additional_args: "--phantom-dependencies=true --tools=true"
+          additional_args: "--droid-gpt=true"
 ```
 
 ## Buildkite annotation summary
@@ -321,7 +320,8 @@ steps:
 ## Container scan (standalone project with tarball)
 
 For base images or golden images, scan a tarball and persist image versions
-using `as_ref`.
+using `as_ref`. Optionally enable base-image update checks and a MAIN-context
+finding delta with `container_diff` (requires `as_ref`).
 
 ```yaml
 steps:
@@ -335,8 +335,30 @@ steps:
           scan_container: true
           image_tar: "/tmp/base-latest.tar"
           project_name: "golden-base-images"
+          image_type: "base"
           as_ref: true
+          container_diff: true
+          base_image_check_updates: true
           project_tags: "team=platform,tier=base"
+```
+
+## Container scan (app image with Dockerfile context)
+
+```yaml
+steps:
+  - command: "docker build -t ghcr.io/acme/demo:${BUILDKITE_COMMIT} ."
+    plugins:
+      - endorlabs#v0.1.9:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
+          scan_dependencies: false
+          scan_container: true
+          image: "ghcr.io/acme/demo:${BUILDKITE_COMMIT}"
+          image_type: "app"
+          dockerfile_path: "Dockerfile"
+          app_scan_project: "demo-app"
+          as_ref: true
 ```
 
 ## Artifact signing mode
