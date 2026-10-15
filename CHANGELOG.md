@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `python_pipenv_enabled` — exports `ENDOR_PYTHON_PIPENV_ENABLED=true` so endorctl
+  resolves `Pipfile` / `Pipfile.lock` projects (requires `pipenv` on PATH).
+
 ## [0.1.10] - 2026-10-09
 
 ### Added

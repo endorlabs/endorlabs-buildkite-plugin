@@ -264,6 +264,24 @@ steps:
           scm_token_env: "ENDOR_SCM_TOKEN"
 ```
 
+## Python Pipenv projects
+
+Set `python_pipenv_enabled: true` to export `ENDOR_PYTHON_PIPENV_ENABLED=true`
+for Pipfile-based projects. Install `pipenv` on the agent (or in `command`)
+before the scan.
+
+```yaml
+steps:
+  - command: "make build"
+    plugins:
+      - endorlabs#v0.1.10:
+          namespace: "your-namespace"
+          api_key_env: "ENDOR_API_CREDENTIALS_KEY"
+          api_secret_env: "ENDOR_API_CREDENTIALS_SECRET"
+          scan_dependencies: true
+          python_pipenv_enabled: true
+```
+
 ## Extra endorctl flags
 
 Use `additional_args` for any endorctl flag not yet exposed as a first-class

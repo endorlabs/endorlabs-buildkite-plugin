@@ -260,6 +260,13 @@ configuration:
       description: >-
         Comma-separated languages to scan (`--languages`). See the
         [endorctl scan command reference](https://docs.endorlabs.com/developers-api/cli/commands/scan) for more information.
+    python_pipenv_enabled:
+      type: boolean
+      default: false
+      description: >-
+        Enable Pipenv dependency resolution for `Pipfile` / `Pipfile.lock`
+        projects by exporting `ENDOR_PYTHON_PIPENV_ENABLED=true` for
+        `endorctl scan`. Requires `pipenv` on the agent PATH.
     segment_match_languages:
       type: string
       description: >-
