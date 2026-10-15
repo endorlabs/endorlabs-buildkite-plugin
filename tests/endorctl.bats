@@ -364,6 +364,18 @@ teardown() {
   assert_output --partial "ran scan"
 }
 
+@test "python_pipenv_enabled exports ENDOR_PYTHON_PIPENV_ENABLED" {
+  export BUILDKITE_PLUGIN_ENDORLABS_PYTHON_PIPENV_ENABLED=true
+
+  stub endorctl \
+    "scan --namespace=demo --output-type=json --log-level=info --verbose=false --dependencies=true : echo ENDOR_PYTHON_PIPENV_ENABLED=\${ENDOR_PYTHON_PIPENV_ENABLED:-unset}"
+
+  run "$PWD"/hooks/post-command
+
+  assert_success
+  assert_output --partial "ENDOR_PYTHON_PIPENV_ENABLED=true"
+}
+
 @test "scan_dependencies=false omits --dependencies flag" {
   export BUILDKITE_PLUGIN_ENDORLABS_SCAN_DEPENDENCIES=false
   export BUILDKITE_PLUGIN_ENDORLABS_SCAN_SECRETS=true

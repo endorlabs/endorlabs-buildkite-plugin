@@ -97,6 +97,9 @@ Buildkite secrets plugin) and reference it with `scm_token_env`.
   (unless `endorctl_skip_install: true`). The `post-command` hook sources
   `BUILDKITE_ENV_FILE` when present so `PATH` from your step scripts is visible to
   `endorctl`.
+- **Pipenv / `Pipfile` scans** — set `python_pipenv_enabled: true` (exports
+  `ENDOR_PYTHON_PIPENV_ENABLED=true`) and ensure `pipenv` is on `PATH` for the
+  `post-command` hook.
 
 ## Buildkite: vendored plugin (recommended)
 

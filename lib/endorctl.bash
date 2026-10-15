@@ -61,6 +61,7 @@ function configure_endorctl() {
   ENDOR_PLUGIN_CALL_GRAPH_LANGUAGES="$(plugin_read_config CALL_GRAPH_LANGUAGES)"
   ENDOR_PLUGIN_DISABLE_PRIVATE_PACKAGE_ANALYSIS="$(plugin_read_config DISABLE_PRIVATE_PACKAGE_ANALYSIS "false")"
   ENDOR_PLUGIN_LANGUAGES="$(plugin_read_config LANGUAGES)"
+  ENDOR_PLUGIN_PYTHON_PIPENV_ENABLED="$(plugin_read_config PYTHON_PIPENV_ENABLED "false")"
   ENDOR_PLUGIN_SEGMENT_MATCH_LANGUAGES="$(plugin_read_config SEGMENT_MATCH_LANGUAGES)"
   ENDOR_PLUGIN_INCLUDE_PATH="$(plugin_read_config INCLUDE_PATH)"
   ENDOR_PLUGIN_EXCLUDE_PATH="$(plugin_read_config EXCLUDE_PATH)"
@@ -440,6 +441,12 @@ function _run_endorctl_with_capture() {
 
 # Build the full args array and exec `endorctl scan`.
 function run_repo_scan() {
+  # python_pipenv_enabled → ENDOR_PYTHON_PIPENV_ENABLED (in-flight endorctl env).
+  # Leave ambient ENDOR_PYTHON_PIPENV_ENABLED alone when the plugin key is false.
+  if [[ "${ENDOR_PLUGIN_PYTHON_PIPENV_ENABLED:-false}" == "true" ]]; then
+    export ENDOR_PYTHON_PIPENV_ENABLED=true
+  fi
+
   local -a args=("scan" "--namespace=${ENDOR_PLUGIN_NAMESPACE}")
   _append_global_auth_args args
   _append_common_logging_output_args args
